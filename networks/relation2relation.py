@@ -44,16 +44,16 @@ class AttHierarchicalGround(nn.Module):
                                        nn.Dropout(dropout))
 
         # affine transformation for lstm hidden state
-        # self.att_hw = nn.Linear(hidden_size, hidden_size)
-        #
-        # # affine transformation for context
-        # self.att_cw = nn.Linear(hidden_size, hidden_size)
-        #
-        # # attention bias
+        self.linear1 = nn.Linear(hidden_size*2, hidden_size)
+
+        # affine transformation for context
+        self.linear2 = nn.Linear(hidden_size, 1, bias=False)
+
+        # attention bias
         # self.att_bias = nn.Parameter(torch.zeros(hidden_size))
-        #
+
         # # affine transformation for vector to scalar
-        self.att_vec2sca = nn.Linear(hidden_size, 1)
+        self.att_vec2sca = nn.Linear(hidden_size, 1, bias=False)
         #
         # #self.temp_att = nn.linear(hidden_size*2, 1)
         self.transform_visual = nn.Sequential(nn.Linear(hidden_size, hidden_size),
@@ -71,24 +71,24 @@ class AttHierarchicalGround(nn.Module):
         self.seg_rnn = nn.LSTM(hidden_size, hidden_size, num_layers, batch_first=True)
 
 
-    # def soft_attention(self, seq_num, input, context):
-    #
-    #     output = None
-    #     for i in range(seq_num):
-    #         y = input[: (i + 1)]
-    #
-    #         m = F.tanh(self.att_hw(y) + self.att_cw(context.expand(i + 1, -1, -1))
-    #                    + self.att_bias.view(1, 1, -1).expand(i + 1, -1, -1))
-    #
-    #         m = self.att_vec2sca(m)
-    #         s = F.softmax(m, dim=0)
-    #
-    #         z = torch.sum(y * s, dim=0).view(1, 1, -1)
-    #
-    #         if output is None:
-    #             output = z
-    #         else:
-    #             output = torch.cat((output, z), dim=0)
+    def soft_attention(self, input, context):
+        """
+        compute temporal self-attention
+        :param input:  (batch_size, seq_len, feat_dim)
+        :param context: (batch_size, feat_dim)
+        :return: vfeat: (batch_size, feat_dim)
+        """
+        batch_size, seq_len, feat_dim = input.size()
+        context = context.unsqueeze(1).repeat(1, seq_len, 1)
+        inputs = torch.cat((input, context), 2).view(-1, feat_dim*2)
+
+        o = self.linear2(torch.tanh(self.linear1(inputs)))
+        e = o.view(batch_size, seq_len)
+        alpha = self.softmax(e)
+        vfeat = torch.bmm(alpha.unsqueeze(1), input).squeeze(1)
+
+        return vfeat
+
 
 
     def word_embedding(self, word):
@@ -175,7 +175,7 @@ class AttHierarchicalGround(nn.Module):
 
         # print(video.shape, relation.shape)
 
-        att =self.att_vec2sca(self.relu(video + relation)) #(batch_size, nframe)
+        att = self.att_vec2sca(self.relu(video + relation)) #(batch_size, nframe)
         temp_att = self.softmax(att)
         # print(temp_att.shape)
 
@@ -197,16 +197,10 @@ class AttHierarchicalGround(nn.Module):
 
         x = self.transform_visual(x)
 
-        # relation_feat = self.transform_rel(relation_feat)
-        #
-        att_x = self.temporalAtt(x, relation_feat)
+        # att_x = self.temporalAtt(x, relation_feat)
 
-        # x = torch.sum(videos, dim=2).squeeze()
-        #
-        # x = self.embedding_visual(x)
-
-        within_seg_rnn_out, _ = self.within_seg_rnn(att_x)
-
+        within_seg_rnn_out, _ = self.within_seg_rnn(x)
+        self.within_seg_rnn.flatten_parameters()
 
         idx = np.round(np.linspace(self.max_seg_len-1, frame_count-1, max_seg_num))
 
@@ -217,20 +211,15 @@ class AttHierarchicalGround(nn.Module):
         # if idx[-1] != frame_count -1:
         #     seg_rnn_input = torch.cat((seg_rnn_input, within_seg_rnn_out[-1]))
 
-        att_seg_rnn_input = self.temporalAtt(seg_rnn_input, relation_feat)
+        # att_seg_rnn_input = self.temporalAtt(seg_rnn_input, relation_feat)
 
-        # print(att_seg_rnn_input.shape)
+        seg_out, hidden = self.seg_rnn(seg_rnn_input)
+        self.seg_rnn.flatten_parameters()
 
-        seg_out,(hn, cn) = self.seg_rnn(att_seg_rnn_input)
+        output = self.soft_attention(within_seg_rnn_out, hidden[0].squeeze(0)) #(batch_size, feat_dim)
+        # output = hidden[0].squeeze(0)
 
-        # print(hn.shape, cn.shape)
-
-        # output = self.soft_attention(frame_count, within_seg_rnn_out, context)
-        output = (hn.permute(1, 0, 2), cn.permute(1, 0, 2))
-
-        # print(output[0].shape, output[1].shape) #(batch_size, 1, feat_dim)
-
-        return output
+        return output, hidden
 
 
 class DecoderRNN(nn.Module):
@@ -238,13 +227,13 @@ class DecoderRNN(nn.Module):
         """Set the hyper-parameters and build the layers."""
         super(DecoderRNN, self).__init__()
         self.embed = nn.Embedding(vocab_size, embed_size)
-        self.lstm = nn.LSTM(embed_size, hidden_size, num_layers, batch_first=True)
+        self.lstm = nn.LSTM(embed_size+hidden_size, hidden_size, num_layers, batch_first=True)
         self.linear = nn.Linear(hidden_size, vocab_size)
         self.max_seq_length = max_seq_length
-        # self.init_weights()
+        # self._init_weights()
 
 
-    def init_weights(self):
+    def _init_weights(self):
         """
         Initialize some parameters with values from the uniform distribution
         :return:
@@ -254,22 +243,67 @@ class DecoderRNN(nn.Module):
         self.linear.weight.data.uniform_(-0.1, 0.1)
 
 
-    def forward(self, features, relations, lengths):
-        """Decode relation attend video feature and reconstruct the relation."""
+    def _init_rnn_state(self, hidden):
+        """
+        initialize hidden state of decode with hidden state of encoder
+        :param hidden:
+        :return:
+        """
+        if hidden is None:
+            return None
+        if isinstance(hidden, tuple):
+            hidden = tuple([self._cat_directions(h) for h in hidden])
+        else:
+            hidden = self._cat_directions(hidden)
+        return hidden
+
+    def _cat_directions(self, hidden):
+        """
+        if encoder is bi-directional, cat the bi-directional hidden state.
+        (#directions * #layers, #batch, dim_hidden) -> (#layers, #batch, #directions * dim_hidden)
+        :param hidden:
+        :return:
+        """
+        hidden = torch.cat([hidden[0:hidden.size(0):2], hidden[1:hidden.size(0):2]], 2)
+        return hidden
+
+
+    def forward(self, video_out, video_hidden, relations, lengths):
+        """
+        Decode relation attended video feature and reconstruct the relation.
+        :param video_out: (batch, seq_len, dim_hidden * num_directions)
+        :param video_hidden: (num_layers * num_directions, batch_size, dim_hidden)
+        :param relations:
+        :param lengths:
+        :return:
+        """
         embeddings = self.embed(relations)
-        embeddings = torch.cat((features[0], embeddings), 1)
+        batch_size, seq_len, _ = embeddings.size()
+
+        context = video_out.unsqueeze(1).repeat(1, seq_len, 1)
+
+        embeddings = torch.cat([embeddings, context], dim=2)
+
         packed = pack_padded_sequence(embeddings, lengths, batch_first=True)
 
-        hiddens, _ = self.lstm(packed)
+        hiddens, _ = self.lstm(packed, video_hidden)
         outputs = self.linear(hiddens[0])
 
         # print(outputs.shape)
         return outputs
 
-    def sample(self, features, states=None):
-        """Generate captions for given image features using greedy search."""
+
+    def sample(self, video_out, states=None):
+        """reconstruct relation using greedy search.
+        """
+        batch_size, _ = video_out.size()
         sampled_ids = []
-        inputs = features[0]
+        start_id = torch.LongTensor([1] * batch_size).cuda() # word id 1 is start signal
+        inputs = self.embed(start_id)
+
+        context = video_out.unsqueeze(1)
+
+        inputs = torch.cat([inputs.unsqueeze(1), context], dim=2)
         for i in range(self.max_seq_length):
             hiddens, states = self.lstm(inputs, states)  # hiddens: (batch_size, 1, hidden_size)
             outputs = self.linear(hiddens.squeeze(1))  # outputs:  (batch_size, vocab_size)
@@ -277,6 +311,6 @@ class DecoderRNN(nn.Module):
             _, predicted = outputs.max(1)  # predicted: (batch_size)
             sampled_ids.append(predicted)
             inputs = self.embed(predicted)  # inputs: (batch_size, embed_size)
-            inputs = inputs.unsqueeze(1)  # inputs: (batch_size, 1, embed_size)
+            inputs = torch.cat([inputs.unsqueeze(1), context], dim=2)  # inputs: (batch_size, 1, embed_size)
         sampled_ids = torch.stack(sampled_ids, 1)  # sampled_ids: (batch_size, max_seq_length)
         return sampled_ids

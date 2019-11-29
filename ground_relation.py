@@ -96,14 +96,11 @@ class GroundRelation():
             relations = relations.to(self.device)
             targets = pack_padded_sequence(relations, valid_lengths, batch_first=True)[0]
 
-            video_encode = self.relation_ground(videos, relation_text)
+            video_out, video_hidden = self.relation_ground(videos, relation_text)
 
-            relation_decode = self.relation_reconstruction(video_encode, relations, valid_lengths)
+            relation_decode = self.relation_reconstruction(video_out, video_hidden, relations, valid_lengths)
 
             loss = self.criterion(relation_decode , targets)
-
-
-
 
             self.relation_ground.zero_grad()
             self.relation_reconstruction.zero_grad()
@@ -116,10 +113,10 @@ class GroundRelation():
 
             cur_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             if iter % self.vis_step == 0:
-                # print(video_encode[0][0, 0][:30])
+                print(video_out[0,:30])
                 print(torch.argmax(relation_decode, 1))
                 print(targets)
-                print(relation_text)
+                # print(relation_text)
 
                 print('    [{}/{}]-{}-{:.4f}-{:5.4f}'.
                       format(iter, total_step, cur_time,  loss.item(), np.exp(loss.item())))
@@ -144,8 +141,8 @@ class GroundRelation():
             relations = relations.to(self.device)
             targets = pack_padded_sequence(relations, valid_lengths, batch_first=True)[0]
 
-            video_encode = self.relation_ground(videos, relation_text)
-            relation_decode = self.relation_reconstruction(video_encode, relations, valid_lengths)
+            video_out, video_hidden = self.relation_ground(videos, relation_text)
+            relation_decode = self.relation_reconstruction(video_out, video_hidden, relations, valid_lengths)
 
             loss = self.criterion(relation_decode, targets)
 
@@ -177,11 +174,11 @@ class GroundRelation():
 
             videos = videos.to(self.device)
 
-            video_encode = self.relation_ground(videos, relation_text)
+            video_out, video_hidden = self.relation_ground(videos, relation_text)
 
             # print(video_encode[0][0,0][:30])
 
-            sample_ids = self.relation_reconstruction.sample(video_encode)
+            sample_ids = self.relation_reconstruction.sample(video_out, video_hidden)
 
             sample_ids = sample_ids[0].cpu().numpy()
 
