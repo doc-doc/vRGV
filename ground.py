@@ -15,13 +15,13 @@ import pickle as pkl
 batch_size = 1
 lr = 1e-4
 num_workers = 0
-epoch_num = 30
+epoch_num = 10
 cuda = True
 nframes, nbbox = 120, 40
 
 vis_step = 30
 save_step = 10000
-visual_dim = 81
+visual_dim = 2048
 
 dataset = 'vidvrd/'
 root_dir = '/storage/jbxiao/workspace/'
@@ -32,7 +32,7 @@ vocab_file = osp.join(sample_list_path, 'vocab.pkl')
 
 
 checkpoint_path = osp.join('models', dataset)
-
+model_prefix = 'visual'
 
 def main():
 
@@ -44,12 +44,12 @@ def main():
 
     train_loader, val_loader = data_loader.run()
 
-    ground_relation = GroundRelation(vocab, train_loader, val_loader, checkpoint_path, vis_step, save_step, visual_dim,
+    ground_relation = GroundRelation(vocab, train_loader, val_loader, checkpoint_path, model_prefix, vis_step, save_step, visual_dim,
                                      lr, batch_size, epoch_num, cuda)
 
-    ground_relation.run()
-    # ground_relation.predict(7)
-
+    # ground_relation.run()
+    ground_relation.predict(3)
+    # ground_relation.ground_attention(0)
     
 
 if __name__ == "__main__":

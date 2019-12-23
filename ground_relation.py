@@ -9,20 +9,22 @@ from utils import *
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import os.path as osp
 import time
+from torch.nn.utils import clip_grad_value_
 # from progressbar import Percentage, Bar, ProgressBar, Timer
 
 class GroundRelation():
-    def __init__(self, vocab, train_loader, val_loader, checkpoint_path, vis_step, save_step, visual_dim, lr, batch_size, epoch_num, cuda):
+    def __init__(self, vocab, train_loader, val_loader, checkpoint_path, model_prefix, vis_step, save_step, visual_dim, lr, batch_size, epoch_num, cuda):
 
         self.vocab = vocab
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.model_dir = checkpoint_path
+        self.model_name = model_prefix
         self.vis_step = vis_step
         self.save_step = save_step
 
         self.lr = lr
-        self.grad_clip = 5
+        self.grad_clip = 10
         self.batch_size = batch_size
         self.epoch_num =  epoch_num
         self.cuda = cuda
@@ -43,7 +45,7 @@ class GroundRelation():
         params = [{'params':self.relation_reconstruction.parameters()}, {'params':self.relation_ground.parameters()}]
         self.optimizer = torch.optim.Adam(params=params,
                                              lr=self.lr)
-        # nn.utils.clip_grad_norm(params, 10.0)
+
 
         self.scheduler = ReduceLROnPlateau(self.optimizer, 'min', patience=2, verbose=True)
 
@@ -55,18 +57,18 @@ class GroundRelation():
     def save_model(self, epoch):
 
         torch.save(self.relation_reconstruction.state_dict(),
-                   osp.join(self.model_dir, 'reconstruction-{}.ckpt'.format(epoch + 1)))
+                   osp.join(self.model_dir, '{}-reconstruct-{}.ckpt'.format(self.model_name, epoch + 1)))
         torch.save(self.relation_ground.state_dict(),
-                   osp.join(self.model_dir, 'relation_ground-{}.ckpt'.format(epoch + 1)))
+                   osp.join(self.model_dir, '{}-ground-{}.ckpt'.format(self.model_name, epoch + 1)))
 
 
     def run(self):
 
         self.build_model()
 
-        save_loss = 10000
+        save_loss = np.inf
 
-        for epoch in range(self.epoch_num):
+        for epoch in range(0, self.epoch_num):
             train_loss = self.train(epoch)
             val_loss = self.val(epoch)
 
@@ -91,7 +93,7 @@ class GroundRelation():
         total_step = len(self.train_loader)
         epoch_loss = 0
 
-        for iter, (relation_text, videos, relations, valid_lengths) in enumerate(self.train_loader):
+        for iter, (relation_text, videos, relations, valid_lengths, video_names) in enumerate(self.train_loader):
             videos = videos.to(self.device)
             relations = relations.to(self.device)
             targets = pack_padded_sequence(relations, valid_lengths, batch_first=True)[0]
@@ -107,16 +109,16 @@ class GroundRelation():
 
             loss.backward()
 
-            clip_gradient(self.optimizer, self.grad_clip)
+            # clip_gradient(self.optimizer, self.grad_clip)
+            # clip_grad_value_()
 
             self.optimizer.step()
 
             cur_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             if iter % self.vis_step == 0:
-                print(video_out[0,:30])
-                print(torch.argmax(relation_decode, 1))
-                print(targets)
-                # print(relation_text)
+                # print(video_out[0, 0:100:10])
+                # print(torch.argmax(relation_decode, 1))
+                # print(targets)
 
                 print('    [{}/{}]-{}-{:.4f}-{:5.4f}'.
                       format(iter, total_step, cur_time,  loss.item(), np.exp(loss.item())))
@@ -126,17 +128,22 @@ class GroundRelation():
         return epoch_loss / total_step
 
 
-
     def val(self, epoch):
         print('==> Epoch:[{}/{}][validation stage]'.format(epoch, self.epoch_num))
 
         self.relation_ground.eval()
         self.relation_reconstruction.eval()
 
+        # ground_model_path = osp.join(self.model_dir, 'relation_ground-{}.ckpt'.format(epoch))
+        # reconstruction_path = osp.join(self.model_dir, 'reconstruction-{}.ckpt'.format(epoch))
+        # self.relation_ground.load_state_dict(torch.load(ground_model_path))
+        # self.relation_reconstruction.load_state_dict(torch.load(reconstruction_path))
+
+
         total_step = len(self.val_loader)
         epoch_loss = 0
 
-        for iter, (relation_text, videos, relations, valid_lengths) in enumerate(self.val_loader):
+        for iter, (relation_text, videos, relations, valid_lengths, video_names) in enumerate(self.val_loader):
             videos = videos.to(self.device)
             relations = relations.to(self.device)
             targets = pack_padded_sequence(relations, valid_lengths, batch_first=True)[0]
@@ -148,6 +155,10 @@ class GroundRelation():
 
             cur_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             if iter % self.vis_step == 0:
+                # print(video_out[0, 100:150])
+                # print(torch.argmax(relation_decode, 1))
+                # print(targets)
+
                 print('    [{}/{}]-{}-{:.4f}-{:5.4f}'.
                       format(iter, total_step, cur_time,  loss.item(), np.exp(loss.item())))
 
@@ -161,22 +172,24 @@ class GroundRelation():
 
         self.build_model()
 
-        ground_model_path = osp.join(self.model_dir, 'relation_ground-{}.ckpt'.format(ep))
-        reconstruction_path = osp.join(self.model_dir, 'reconstruction-{}.ckpt'.format(ep))
+        ground_model_path = osp.join(self.model_dir, '{}-ground-{}.ckpt'.format(self.model_name, ep))
+        reconstruction_path = osp.join(self.model_dir, '{}-reconstruct-{}.ckpt'.format(self.model_name, ep))
 
         self.relation_reconstruction.eval()
         self.relation_ground.eval()
 
         self.relation_ground.load_state_dict(torch.load(ground_model_path))
         self.relation_reconstruction.load_state_dict(torch.load(reconstruction_path))
+        total = len(self.val_loader)
+        pos_num = 0
 
-        for iter, (relation_text, videos, relations, valid_lengths) in enumerate(self.val_loader):
+        fout = open('results/prediction.txt', 'w')
+
+        for iter, (relation_text, videos, relations, valid_lengths, video_names) in enumerate(self.val_loader):
 
             videos = videos.to(self.device)
 
             video_out, video_hidden = self.relation_ground(videos, relation_text)
-
-            # print(video_encode[0][0,0][:30])
 
             sample_ids = self.relation_reconstruction.sample(video_out, video_hidden)
 
@@ -188,8 +201,65 @@ class GroundRelation():
                 predict_relation.append(word)
                 if word == '<end>': break
 
-            predict_relation = ' '.join(predict_relation)
-            print(relation_text[0], predict_relation)
+            predict_relation = ' '.join(predict_relation[1:-1])
+            # print(relation_text[0], predict_relation)
+
+            table = str.maketrans('-_', '  ')
+            relation = relation_text[0].translate(table)
+            output_str = "{}:{}".format(relation, predict_relation)
+            fout.writelines(output_str+'\n')
+
+            if relation == predict_relation:
+                print(output_str)
+                pos_num += 1
+
+        print("Reconstrution Rate: ", pos_num / total)
+        fout.close()
+
+
+    def ground_attention(self, ep):
+        """output the spatial temporal attention as grounding results"""
+        self.build_model()
+
+        ground_model_path = osp.join(self.model_dir, '{}-ground-{}.ckpt'.format(self.model_name, ep))
+        reconstruction_path = osp.join(self.model_dir, '{}-reconstruct-{}.ckpt'.format(self.model_name, ep))
+
+        self.relation_reconstruction.eval()
+        self.relation_ground.eval()
+
+        self.relation_ground.load_state_dict(torch.load(ground_model_path))
+        self.relation_reconstruction.load_state_dict(torch.load(reconstruction_path))
+        total = len(self.val_loader)
+
+        video = {}
+        pre_vname = ''
+        for iter, (relation_text, videos, relations, valid_lengths, video_names) in enumerate(self.val_loader):
+            vname = video_names[0]
+
+            videos = videos.to(self.device)
+            sub_atts, obj_atts, beta = self.relation_ground(videos, relation_text, mode='test')
+
+            data_sub_atts = sub_atts.data.cpu().numpy()
+            data_obj_atts = obj_atts.data.cpu().numpy()
+            data_beta = beta.data.cpu().numpy()
+
+            data = {}
+            data['sub'] = data_sub_atts.tolist()
+            data['obj'] = data_obj_atts.tolist()
+            data['beta'] = data_beta.tolist()
+            video[relation_text[0]] = data
+
+            if (vname != pre_vname and iter > 0) or (iter == total-1):
+                save_name = '../ground_data/results/vidvrd/'+pre_vname+'.json'
+                save_results(save_name, video)
+                video = {}
+
+            pre_vname = vname
+
+            if iter%self.vis_step == 0:
+                print("{}:{}".format(iter,vname))
+
+
 
 
 

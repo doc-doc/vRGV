@@ -4,6 +4,10 @@
 # @Email   : junbin@comp.nus.edu.sg
 # @File    : utils.py
 # ====================================================
+import json
+import os
+import os.path as osp
+
 
 def clip_gradient(optimizer, grad_clip):
     """
@@ -15,3 +19,14 @@ def clip_gradient(optimizer, grad_clip):
         for param in group['params']:
             if param.grad is not None:
                 param.grad.data.clamp_(-grad_clip, grad_clip)
+
+
+def save_results(save_name, data):
+
+    path = osp.dirname(save_name)
+    if not osp.exists(path):
+        os.makedirs(path)
+
+    with open(save_name, 'w') as fp:
+        json.dump(data, fp)
+

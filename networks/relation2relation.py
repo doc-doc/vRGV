@@ -27,7 +27,7 @@ class AttHierarchicalGround(nn.Module):
         self.word_dim = word_dim
 
         self.max_seg_len = 12
-        dropout = 0.2
+        dropout = 0.5
         #self.max_seg_num = 10
 
 
@@ -87,10 +87,10 @@ class AttHierarchicalGround(nn.Module):
 
         o = self.linear2(torch.tanh(self.linear1(inputs)))
         e = o.view(batch_size, seq_len)
-        alpha = self.softmax(e)
-        vfeat = torch.bmm(alpha.unsqueeze(1), input).squeeze(1)
+        beta = self.softmax(e)
+        vfeat = torch.bmm(beta.unsqueeze(1), input).squeeze(1)
 
-        return vfeat
+        return vfeat, beta
 
 
 
@@ -123,16 +123,17 @@ class AttHierarchicalGround(nn.Module):
         frame_count, nbbox, feature_dim = video.shape[0], video.shape[1], video.shape[2]
         video_embed = self.embedding_visual(video.view(-1, feature_dim))
         video_embed = video_embed.view(frame_count, nbbox, -1)
+
         #print(feature.shape) #(nframe, nbbox, feat_dim)
 
         # attend_subject = video_embed.mm(word.view(word.shape[1], 1))
         # attend_subject = attend_subject.view(frame_count, nbbox)
 
         # attention = self.softmax(attend_subject)
-        #print(attention.shape) #(nframe, nbbox)
+        # print(attention.shape) #(nframe, nbbox)
 
         # attend_feature = (feature * attention.unsqueeze(2)).sum(dim=1)
-        #print(attend_feature.shape) #(nframe, feat_dim)
+        # print(attend_feature.shape) #(nframe, feat_dim)
 
         # return attend_feature, attention
 
@@ -156,6 +157,8 @@ class AttHierarchicalGround(nn.Module):
         batch_size = videos.shape[0]
         frame_feat = None
         relation_feat = None
+        sub_satt_values = None
+        obj_satt_values = None
 
         for bs in range(batch_size):
             relation = relations[bs]
@@ -165,10 +168,7 @@ class AttHierarchicalGround(nn.Module):
             subject, object = split_relation[0], split_relation[2]
             subject_embed = self.word_embedding(subject)
             object_embed = self.word_embedding(object)
-
             sub_obj = torch.cat([subject_embed, object_embed], dim=1).unsqueeze(0)
-
-
 
             subject_feat, sub_att = self.attend_semantics(video, subject_embed)
             object_feat, obj_att = self.attend_semantics(video, object_embed)
@@ -177,40 +177,44 @@ class AttHierarchicalGround(nn.Module):
             if bs == 0:
                 frame_feat = cb_feat
                 relation_feat = sub_obj
+                sub_satt_values = sub_att
+                obj_satt_values = obj_att
             else:
                 frame_feat = torch.cat([frame_feat, cb_feat], 0)
                 relation_feat = torch.cat([relation_feat, sub_obj], 0)
+                sub_satt_values = torch.cat([sub_satt_values, sub_att], 0)
+                obj_satt_values = torch.cat([obj_satt_values, obj_att], 0)
 
 
         # print(frame_feat.shape) #(batch_size, nframe, feat_dim)
         # print(relation_feat.shape)
 
-        return frame_feat, relation_feat
+        return frame_feat, relation_feat, sub_satt_values, obj_satt_values
 
 
-    def temporalAtt(self, video, relation):
+    # def temporalAtt(self, video, relation):
+    #
+    #     # print(video.shape, relation.shape)
+    #
+    #     att = self.att_vec2sca(self.relu(video + relation)) #(batch_size, nframe)
+    #     temp_att = self.softmax(att)
+    #     # print(temp_att.shape)
+    #
+    #     att_feat = (video * temp_att) #(batch_size, nframe, feat_dim)
+    #
+    #     # print(att_feat.shape)
+    #
+    #     return att_feat
 
-        # print(video.shape, relation.shape)
-
-        att = self.att_vec2sca(self.relu(video + relation)) #(batch_size, nframe)
-        temp_att = self.softmax(att)
-        # print(temp_att.shape)
-
-        att_feat = (video * temp_att) #(batch_size, nframe, feat_dim)
-
-        # print(att_feat.shape)
-
-        return att_feat
 
 
-
-    def forward(self, videos, relation):
+    def forward(self, videos, relation, mode='trainval'):
 
         frame_count = videos.shape[1]
 
         max_seg_num = frame_count / self.max_seg_len
 
-        x, relation_feat = self.spatialAtt(videos, relation)
+        x, relation_feat, sub_atts, obj_atts = self.spatialAtt(videos, relation)
 
         x = self.transform_visual(x)
 
@@ -233,10 +237,13 @@ class AttHierarchicalGround(nn.Module):
         seg_out, hidden = self.seg_rnn(seg_rnn_input)
         self.seg_rnn.flatten_parameters()
 
-        output = self.soft_attention(within_seg_rnn_out, hidden[0].squeeze(0)) #(batch_size, feat_dim)
-        # output = hidden[0].squeeze(0)
+        output, beta = self.soft_attention(within_seg_rnn_out, hidden[0].squeeze(0)) #(batch_size, feat_dim)
 
-        return output, hidden
+        # output = hidden[0].squeeze(0)
+        if mode == 'test':
+            return sub_atts, obj_atts, beta
+        else:
+            return output, hidden
 
 
 class DecoderRNN(nn.Module):
