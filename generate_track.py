@@ -29,8 +29,10 @@ def load_video_bbox(vname, feat_dir, nframe):
         with open(frame_name, 'rb') as fp:
             feat = pkl.load(fp)
         bbox, classme = feat['bbox'].squeeze(), feat['cls_prob'].squeeze()
+        classme = classme[:, 1:] #skip background
         index = np.argmax(classme, 1)
-        bbox = np.asarray([bbox[i][index[i]:index[i] + 4] for i in range(len(bbox))])
+        # print(index)
+        bbox = np.asarray([bbox[i][4*(index[i]+1):4*(index[i]+1) + 4] for i in range(len(bbox))])
         videos.append(bbox)
 
     return videos, sample_frames
@@ -67,6 +69,7 @@ def interpolate(sub_bboxes, obj_bboxes, valid_frame_idx, sample_frames, nframe):
     assert len(full_sub_bboxes) == nframe, 'interpolate error'
 
     return full_sub_bboxes, full_obj_bboxes
+
 
 def generate_track(val_list_file, results_dir, feat_dir):
     """
@@ -118,14 +121,14 @@ def generate_track(val_list_file, results_dir, feat_dir):
         if valid_fnum < nframe:
             sub_bboxes, obj_bboxes = interpolate(sub_bboxes, obj_bboxes, valid_frame_idx, sample_frames, nframe)
 
-        sub_bboxes = [bbox.tolist() for bbox in sub_bboxes]
-        obj_bboxes = [bbox.tolist() for bbox in obj_bboxes]
+        sub_bboxes = {fid:bbox.tolist() for fid, bbox in enumerate(sub_bboxes)}
+        obj_bboxes = {fid:bbox.tolist() for fid, bbox in enumerate(obj_bboxes)}
 
-        video_res[relation]={"duration":[0, nframe], "sub": sub_bboxes, "obj": obj_bboxes}
+        video_res[relation]={"sub": sub_bboxes, "obj": obj_bboxes}
 
         pre_vname = vname
 
-    save_results('results/ground.json', final_res)
+    save_results('results/ground_result_nobg.json', final_res)
 
 
 def main():
