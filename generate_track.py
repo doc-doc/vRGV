@@ -11,6 +11,7 @@ import pickle as pkl
 from utils import save_results
 
 sample_fnum = 120
+beta_thresh = 1e-6
 
 def load_video_bbox(vname, feat_dir, nframe):
     """
@@ -79,6 +80,7 @@ def generate_track(val_list_file, results_dir, feat_dir):
     :return:
     """
     val_list = load_file(val_list_file)
+    total_n = len(val_list)
     pre_vname = ''
     results, video_bboxes = None, None
     sample_frames = None
@@ -96,10 +98,11 @@ def generate_track(val_list_file, results_dir, feat_dir):
                 final_res[pre_vname] = video_res
             video_res = {}
 
-        if relation not in results: continue
         subs = results[relation]['sub']
         objs = results[relation]['obj']
-        beta = results[relation]['beta']
+        beta = results[relation]['beta'][0] #(1, sample_fnum)
+        print(vname, relation)
+        print(beta)
 
         sub_index = np.argmax(subs, 1) #select bbox with maximum attention value
         obj_index = np.argmax(objs, 1)
@@ -107,11 +110,14 @@ def generate_track(val_list_file, results_dir, feat_dir):
         sub_bboxes, obj_bboxes = [], []
         valid_frame_idx = []
 
-        #delete redundant
+        #delete redundant and add temporal attention score as indicator
         for j, bboxes in enumerate(video_bboxes):
+            # if beta[0][j] < beta_thresh: continue
             if j > 0 and sample_frames[j] == sample_frames[j-1]: continue
-            sub_bboxes.append(bboxes[sub_index[j]])
-            obj_bboxes.append(bboxes[obj_index[j]])
+            sub_b = np.append(bboxes[sub_index[j]], beta[j])
+            obj_b = np.append(bboxes[obj_index[j]], beta[j])
+            sub_bboxes.append(sub_b)
+            obj_bboxes.append(obj_b)
             valid_frame_idx.append(j)
 
         valid_fnum = len(sub_bboxes)
@@ -121,14 +127,20 @@ def generate_track(val_list_file, results_dir, feat_dir):
         if valid_fnum < nframe:
             sub_bboxes, obj_bboxes = interpolate(sub_bboxes, obj_bboxes, valid_frame_idx, sample_frames, nframe)
 
-        sub_bboxes = {fid:bbox.tolist() for fid, bbox in enumerate(sub_bboxes)}
-        obj_bboxes = {fid:bbox.tolist() for fid, bbox in enumerate(obj_bboxes)}
+        sub_bboxes = {fid:bbox[:4].tolist() for fid, bbox in enumerate(sub_bboxes) }
+        obj_bboxes = {fid:bbox[:4].tolist() for fid, bbox in enumerate(obj_bboxes) }
+
+        # sub_bboxes = {fid: bbox[:4].tolist() for fid, bbox in enumerate(sub_bboxes) if bbox[4] >= beta_thresh}
+        # obj_bboxes = {fid: bbox[:4].tolist() for fid, bbox in enumerate(obj_bboxes) if bbox[4] >= beta_thresh}
 
         video_res[relation]={"sub": sub_bboxes, "obj": obj_bboxes}
 
         pre_vname = vname
 
-    save_results('results/ground_result_nobg.json', final_res)
+        if i == total_n -1:
+            final_res[vname] = video_res
+
+    save_results('results/ground_result.json', final_res)
 
 
 def main():

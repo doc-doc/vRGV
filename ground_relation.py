@@ -220,22 +220,17 @@ class GroundRelation():
     def ground_attention(self, ep):
         """output the spatial temporal attention as grounding results"""
         self.build_model()
-
         ground_model_path = osp.join(self.model_dir, '{}-ground-{}.ckpt'.format(self.model_name, ep))
-        reconstruction_path = osp.join(self.model_dir, '{}-reconstruct-{}.ckpt'.format(self.model_name, ep))
-
-        self.relation_reconstruction.eval()
         self.relation_ground.eval()
-
         self.relation_ground.load_state_dict(torch.load(ground_model_path))
-        self.relation_reconstruction.load_state_dict(torch.load(reconstruction_path))
+
         total = len(self.val_loader)
 
         video = {}
         pre_vname = ''
         for iter, (relation_text, videos, relations, valid_lengths, video_names) in enumerate(self.val_loader):
-            vname = video_names[0]
 
+            vname = video_names[0]
             videos = videos.to(self.device)
             sub_atts, obj_atts, beta = self.relation_ground(videos, relation_text, mode='test')
 
@@ -247,20 +242,18 @@ class GroundRelation():
             data['sub'] = data_sub_atts.tolist()
             data['obj'] = data_obj_atts.tolist()
             data['beta'] = data_beta.tolist()
-            video[relation_text[0]] = data
+
 
             if (vname != pre_vname and iter > 0) or (iter == total-1):
+                if iter == total-1:
+                    video[relation_text[0]] = data
                 save_name = '../ground_data/results/vidvrd/'+pre_vname+'.json'
                 save_results(save_name, video)
                 video = {}
 
+            video[relation_text[0]] = data
+
             pre_vname = vname
 
             if iter%self.vis_step == 0:
-                print("{}:{}".format(iter,vname))
-
-
-
-
-
-
+                print("{}:{}".format(iter, vname))

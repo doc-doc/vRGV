@@ -48,8 +48,8 @@ def main():
                                      lr, batch_size, epoch_num, cuda)
 
     # ground_relation.run()
-    ground_relation.predict(3)
-    # ground_relation.ground_attention(0)
+    # ground_relation.predict(7)
+    ground_relation.ground_attention(7)
     
 
 if __name__ == "__main__":

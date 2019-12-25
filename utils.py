@@ -23,6 +23,8 @@ def clip_gradient(optimizer, grad_clip):
 
 def save_results(save_name, data):
 
+    print('Save to {}'.format(save_name))
+
     path = osp.dirname(save_name)
     if not osp.exists(path):
         os.makedirs(path)

@@ -53,7 +53,7 @@ def image_relation(pimage, captions, predicate, score):
     cv2.putText(image, str(captions[0]['fid']), (10, 10), cv2.FONT_HERSHEY_COMPLEX_SMALL, font, [255, 0, 0])
     sp = 0
     relation = predicate +'>'+str(captions[1]['track_id'])
-    str_score = str('{:.4f}'.format(score))
+    str_score = '' #str('{:.4f}'.format(score))
     length = len(relation) * 13
     len_score = len(str_score) * 13
     bbox = [int(b) for b in captions[0]['bbox']]
@@ -144,8 +144,7 @@ def vis_video_relation(video_name, anno_file, query, save=False):
     for relation, ins in vanno.items():
         # if relation != query: continue
         spo = relation.split('-')
-        # instances = sorted(instances, key=lambda inst: inst['score'], reverse=True)
-        print(relation, len(ins))
+
         if save:
             save_name  = 'demo/'+vname+'/'+relation+ '.mp4'
             save_dir = osp.dirname(save_name)
@@ -157,31 +156,29 @@ def vis_video_relation(video_name, anno_file, query, save=False):
                 '-pix_fmt': 'yuv420p',
                 '-r': fps, })
 
-        # for id, ins in enumerate(instances):
-        duration = ins['duration']
         sub, obj = ins['sub'], ins['obj']
         if 'score' in ins:
             score = ins['score']
         else:
             score = 1.
 
-        for fid in range(duration[0], duration[1]):
+        for fid in sub:
             captions = []
             caption, caption_obj = {},{}
             #subject
             caption['fid'] = fid
-            caption['bbox'] = sub[fid - duration[0]]
+            caption['bbox'] = sub[fid]
             caption['name'] = spo[0]
             caption['track_id'] = 0
             captions.append(caption)
             #object
             caption_obj['fid'] = fid
-            caption_obj['bbox'] = obj[fid-duration[0]]
+            caption_obj['bbox'] = obj[fid]
             caption_obj['name'] = spo[2]
             caption_obj['track_id'] = 1
             captions.append(caption_obj)
 
-            img = cv2.imread(osp.join(video_name, '{:06d}.JPEG'.format(fid)))
+            img = cv2.imread(osp.join(video_name, '{:06d}.JPEG'.format(int(fid))))
             image = image_relation(img, captions, spo[1], score)
             cv2.imshow(video_name, image)
             if cv2.waitKey(1) and 0xFF == ord('q'):
@@ -201,9 +198,9 @@ def main():
     root_dir = '../vdata/'
     video_dir = root_dir + 'JPEGImages/'
     # 00091008, 00119046, 00272006, 00125015, 00223001, 00091004, 00190000, 00142000, 00177011, 00416000
-    video_name = video_dir + 'ILSVRC2015_train_00057005' #ILSVRC2015_train_00010001' #'ILSVRC2015_train_00225000'
+    video_name = video_dir + 'ILSVRC2015_train_00010029' #ILSVRC2015_train_00010001' #'ILSVRC2015_train_00225000'
 
-    anno_file_pred = 'results/ground.json'
+    anno_file_pred = 'results/ground_result.json'
 
     #query = ('bicycle', 'move_beneath', 'person')
     query = ('person', 'ride', 'bicycle')

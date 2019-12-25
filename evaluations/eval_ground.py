@@ -17,11 +17,13 @@ def eval_ground_scores(gt_relations, pred_relations, tiou_threshold):
     predict, predict_sub, predict_obj = 0, 0, 0
 
     for relation, pred_trajs in pred_relations.items():
-        gt_trajs = gt_relations[relation]
-
         pred_sub = pred_trajs['sub']
         pred_obj = pred_trajs['obj']
         flag, flag_s, flag_o = False, False, False
+
+        gt_trajs = gt_relations[relation]
+
+        print(relation)
 
         for gt_traj in gt_trajs:
             gt_sub = gt_traj['sub']
@@ -67,7 +69,7 @@ def evaluate(groundtruth, prediction, tiou_threshold=0.5):
         relation_pred = prediction[qid]
         if len(relation_pred) == 0:
             continue
-
+        print(qid)
         video_acc, video_acc_sub, video_acc_obj, relation_num = eval_ground_scores(relation_gt, relation_pred, tiou_threshold)
         # print('{} {:.6f} {:.6f} {:.6f}'.format(qid, video_acc_sub, video_acc_obj, video_acc))
 
@@ -81,19 +83,18 @@ def evaluate(groundtruth, prediction, tiou_threshold=0.5):
     acc_sub /= video_num
     acc_obj /= video_num
 
-    print(gt_rnum)
+    print("Subject\t Object\t All")
 
-    print('Subject: {:.6f}, Object: {:.6f}, All: {:.6f}'.format(acc_sub, acc_obj, acc))
-
+    print('{:.6f}\t {:.6f}\t {:.6f}'.format(acc_sub, acc_obj, acc))
 
 
 def main():
 
     groundtruth_dir = '../dataset/vidvrd/'
-    gt_file = osp.join(groundtruth_dir, 'gt_relation.json')
+    gt_file = osp.join(groundtruth_dir, 'gt_relation_frame.json')
 
     result_dir = '../results/'
-    res_file = osp.join(result_dir, 'ground_result_nobg.json')
+    res_file = osp.join(result_dir, 'ground_result.json')
 
     grountruth = load_file(gt_file)
     prediction = load_file(res_file)

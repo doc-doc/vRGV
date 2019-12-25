@@ -117,11 +117,10 @@ def tiou(pred_traj, gt_traj):
     :param gt_duration:
     :return:
     """
-    max_overlap = 0
-    max_index = 0
+
     thresh_s = [0.3, 0.5, 0.7]
 
-    top1, top2, top3 = 0, 0, 0
+    t_op1, t_op2, t_op3 = 0, 0, 0
 
     total = len(set(gt_traj.keys()) | set(pred_traj.keys()))
     for i, fid in enumerate(gt_traj):
@@ -129,15 +128,17 @@ def tiou(pred_traj, gt_traj):
             continue
         sIoU = iou(gt_traj[fid], pred_traj[fid])
         if sIoU >= thresh_s[0]:
-            top1 += 1
+            t_op1 += 1
             if sIoU >= thresh_s[1]:
-                top2 += 1
+                t_op2 += 1
                 if sIoU >= thresh_s[2]:
-                    top3 += 1
+                    t_op3 += 1
 
-    tIoU = (top1 + top2 + top3) * 1.0 / (3 * total)
+    tov = (t_op1 + t_op2 + t_op3) * 1.0 / (3 * total)
 
-    return tIoU
+    print('pred_traj: {}, gt_traj: {}, tiou: {:.6f}'.format(len(pred_traj), len(gt_traj), tov))
+
+    return tov
 
 
 
