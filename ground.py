@@ -12,10 +12,10 @@ import os.path as osp
 import pickle as pkl
 
 
-batch_size = 1
+batch_size = 32
 lr = 1e-4
-num_workers = 0
-epoch_num = 10
+num_workers = 8
+epoch_num = 20
 cuda = True
 nframes, nbbox = 120, 40
 
@@ -32,7 +32,7 @@ vocab_file = osp.join(sample_list_path, 'vocab.pkl')
 
 
 checkpoint_path = osp.join('models', dataset)
-model_prefix = 'visual'
+model_prefix = 'visual_nopred'
 
 def main():
 
@@ -42,14 +42,14 @@ def main():
     data_loader = dataloader.RelationLoader(batch_size, num_workers, video_feature_path,
                                             sample_list_path, vocab, nframes, nbbox, visual_dim, True, False)
 
-    train_loader, val_loader = data_loader.run()
+    train_loader, val_loader = data_loader.run(mode='val')
 
     ground_relation = GroundRelation(vocab, train_loader, val_loader, checkpoint_path, model_prefix, vis_step, save_step, visual_dim,
                                      lr, batch_size, epoch_num, cuda)
 
-    # ground_relation.run()
+    ground_relation.run(pretrain=True)
     # ground_relation.predict(7)
-    ground_relation.ground_attention(7)
+    # ground_relation.ground_attention(7)
     
 
 if __name__ == "__main__":

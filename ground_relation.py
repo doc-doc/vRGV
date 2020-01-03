@@ -10,7 +10,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 import os.path as osp
 import time
 from torch.nn.utils import clip_grad_value_
-# from progressbar import Percentage, Bar, ProgressBar, Timer
+
 
 class GroundRelation():
     def __init__(self, vocab, train_loader, val_loader, checkpoint_path, model_prefix, vis_step, save_step, visual_dim, lr, batch_size, epoch_num, cuda):
@@ -61,10 +61,44 @@ class GroundRelation():
         torch.save(self.relation_ground.state_dict(),
                    osp.join(self.model_dir, '{}-ground-{}.ckpt'.format(self.model_name, epoch + 1)))
 
+    def resume(self):
+        """
+        initialize with pre-trained model
+        :param epoch:
+        :return:
+        """
+        ground_model_file = osp.join(self.model_dir,'../visual-ground-7.ckpt')
+        reconstruct_model_file = osp.join(self.model_dir,'../visual-reconstruct-7.ckpt')
+        ground_dict = torch.load(ground_model_file)
+        reconstruct_dict = torch.load(reconstruct_model_file)
 
-    def run(self):
+        new_ground_dict = {}
+        for k, v in self.relation_ground.state_dict().items():
+            if k in ground_dict:
+                v = ground_dict[k]
+            new_ground_dict[k] = v
+
+        new_reconstruct_dict = {}
+        for k, v in self.relation_reconstruction.state_dict().items():
+            if k in reconstruct_dict:
+                v = reconstruct_dict[k]
+            new_reconstruct_dict[k] = v
+
+        self.relation_reconstruction.load_state_dict(new_reconstruct_dict)
+
+        # self.relation_ground.load_state_dict({k:v for k,v in ground_dict.items()
+        #                                       if k in self.relation_ground.state_dict()})
+        #
+        # self.relation_reconstruction.load_state_dict({k:v for k,v in reconstruct_dict.items()
+        #                                               if k in self.relation_reconstruction.state_dict()})
+
+
+
+    def run(self, pretrain='False'):
 
         self.build_model()
+        if pretrain:
+            self.resume()
 
         save_loss = np.inf
 
@@ -210,8 +244,10 @@ class GroundRelation():
             fout.writelines(output_str+'\n')
 
             if relation == predict_relation:
-                print(output_str)
                 pos_num += 1
+
+            if iter%self.vis_step == 0:
+                print("{}:{}".format(iter, output_str))
 
         print("Reconstrution Rate: ", pos_num / total)
         fout.close()
@@ -232,16 +268,18 @@ class GroundRelation():
 
             vname = video_names[0]
             videos = videos.to(self.device)
-            sub_atts, obj_atts, beta = self.relation_ground(videos, relation_text, mode='test')
+            sub_atts, obj_atts, beta2 = self.relation_ground(videos, relation_text, mode='test')
 
             data_sub_atts = sub_atts.data.cpu().numpy()
             data_obj_atts = obj_atts.data.cpu().numpy()
-            data_beta = beta.data.cpu().numpy()
+            data_beta = beta2.data.cpu().numpy()
+            # data_beta1 = beta1.data.cpu().numpy()
 
             data = {}
             data['sub'] = data_sub_atts.tolist()
             data['obj'] = data_obj_atts.tolist()
             data['beta'] = data_beta.tolist()
+            # data['beta1'] = data_beta1.tolist()
 
 
             if (vname != pre_vname and iter > 0) or (iter == total-1):
