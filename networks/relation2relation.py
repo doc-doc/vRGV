@@ -27,9 +27,7 @@ class AttHierarchicalGround(nn.Module):
         self.word_dim = word_dim
 
         self.max_seg_len = 12
-        dropout = 0.5
-        #self.max_seg_num = 10
-
+        dropout = 0.2
 
         self.word_dict = None
         with open('/storage/jbxiao/workspace/ground_data/glove/vidvrd_word_glove.pkl', 'rb') as fp:
@@ -46,26 +44,34 @@ class AttHierarchicalGround(nn.Module):
         self.transform_spatt1 = nn.Linear(self.embed_dim*2, self.embed_dim)
         self.transform_spatt2 = nn.Linear(self.embed_dim, 1, bias=False)
 
+        # self.transform_tempatt_bottom1 = nn.Linear(self.hidden_size*2, self.hidden_size)
+        # self.transform_tempatt_bottom2 = nn.Linear(self.hidden_size, 1, bias=False)
+
+        self.msg_sub2obj = nn.Sequential(nn.Linear(40, self.embed_dim),
+                                       nn.ReLU(),
+                                       nn.Dropout(dropout))
+
+        self.msg_obj2sub = nn.Sequential(nn.Linear(40, self.embed_dim),
+                                       nn.ReLU(),
+                                       nn.Dropout(dropout))
+
         # affine transformation for lstm hidden state
         self.linear1 = nn.Linear(hidden_size*2, hidden_size)
 
         # affine transformation for context
         self.linear2 = nn.Linear(hidden_size, 1, bias=False)
 
-        # attention bias
-        # self.att_bias = nn.Parameter(torch.zeros(hidden_size))
+        # self.att_vec2sca = nn.Linear(hidden_size, 1, bias=False)
 
-        # # affine transformation for vector to scalar
-        self.att_vec2sca = nn.Linear(hidden_size, 1, bias=False)
-        #
-        # #self.temp_att = nn.linear(hidden_size*2, 1)
         self.transform_visual = nn.Sequential(nn.Linear(hidden_size, hidden_size),
                                        nn.ReLU(),
                                        nn.Dropout(dropout))
+        # self.layer_norm_visual = nn.LayerNorm(hidden_size, eps=1e-6)
 
-        self.transform_rel = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-                                       nn.ReLU(),
-                                       nn.Dropout(dropout))
+        # self.transform_rel = nn.Sequential(nn.Linear(hidden_size, hidden_size),
+        #                                nn.ReLU(),
+        #                                nn.Dropout(dropout))
+        # self.layer_norm_rel = nn.LayerNorm(hidden_size, eps=1e-6)
 
         self.relu = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
@@ -93,7 +99,6 @@ class AttHierarchicalGround(nn.Module):
         return vfeat, beta
 
 
-
     def word_embedding(self, word):
         """
         Extract GloVe feature for subject and object
@@ -113,30 +118,15 @@ class AttHierarchicalGround(nn.Module):
         return word_embed
 
 
-    def attend_semantics(self, video, word):
+    def attend_semantics(self, video_embed, word):
         """
         attend subject and object in relation
         :param video:
         :param word:
         :return:
         """
-        frame_count, nbbox, feature_dim = video.shape[0], video.shape[1], video.shape[2]
-        video_embed = self.embedding_visual(video.view(-1, feature_dim))
-        video_embed = video_embed.view(frame_count, nbbox, -1)
 
-        #print(feature.shape) #(nframe, nbbox, feat_dim)
-
-        # attend_subject = video_embed.mm(word.view(word.shape[1], 1))
-        # attend_subject = attend_subject.view(frame_count, nbbox)
-
-        # attention = self.softmax(attend_subject)
-        # print(attention.shape) #(nframe, nbbox)
-
-        # attend_feature = (feature * attention.unsqueeze(2)).sum(dim=1)
-        # print(attend_feature.shape) #(nframe, feat_dim)
-
-        # return attend_feature, attention
-
+        frame_count, nbbox, feat_dim = video_embed.size()
         word = word.repeat(frame_count, nbbox, 1)
 
         video_word = torch.cat((video_embed, word), 2)
@@ -144,25 +134,26 @@ class AttHierarchicalGround(nn.Module):
         video_word = video_word.view(frame_count*nbbox, -1)
         video_word_o = self.transform_spatt2(torch.tanh(self.transform_spatt1(video_word)))
         video_word_o = video_word_o.view(frame_count, nbbox)
-        alpha = self.softmax(video_word_o)
+        alpha = self.softmax(video_word_o) #(nframe, nbbox)
         attend_feature = torch.bmm(alpha.unsqueeze(1), video_embed).squeeze(1)
-        # print(alpha[0])
-        # print(attend_feature.shape)
-        return attend_feature, alpha
 
+        return attend_feature, alpha
 
 
     def spatialAtt(self, videos, relations):
 
-        batch_size = videos.shape[0]
         frame_feat = None
         relation_feat = None
         sub_satt_values = None
         obj_satt_values = None
 
+        batch_size, frame_count, nbbox, feat_dim = videos.size()
+        video_embeds = self.embedding_visual(videos.view(-1, feat_dim))
+        video_embeds = video_embeds.view(batch_size, frame_count, nbbox, -1)
+
         for bs in range(batch_size):
             relation = relations[bs]
-            video = videos[bs]
+            video_embed = video_embeds[bs]
 
             split_relation = relation.split('-')
             subject, object = split_relation[0], split_relation[2]
@@ -170,10 +161,19 @@ class AttHierarchicalGround(nn.Module):
             object_embed = self.word_embedding(object)
             sub_obj = torch.cat([subject_embed, object_embed], dim=1).unsqueeze(0)
 
-            subject_feat, sub_att = self.attend_semantics(video, subject_embed)
-            object_feat, obj_att = self.attend_semantics(video, object_embed)
+            subject_feat, sub_att = self.attend_semantics(video_embed, subject_embed)
+            object_feat, obj_att = self.attend_semantics(video_embed, object_embed)
 
-            cb_feat = torch.cat((subject_feat, object_feat), dim=1).unsqueeze(0)
+            s2o_feat = self.msg_sub2obj(sub_att)
+            o2s_feat = self.msg_obj2sub(obj_att)
+
+            final_subject_feat = subject_feat+o2s_feat
+            final_object_feat = object_feat+s2o_feat
+
+            # final_subject_feat = subject_feat
+            # final_object_feat = object_feat
+
+            cb_feat = torch.cat((final_subject_feat, final_object_feat), dim=1).unsqueeze(0)
             if bs == 0:
                 frame_feat = cb_feat
                 relation_feat = sub_obj
@@ -192,20 +192,26 @@ class AttHierarchicalGround(nn.Module):
         return frame_feat, relation_feat, sub_satt_values, obj_satt_values
 
 
-    # def temporalAtt(self, video, relation):
-    #
-    #     # print(video.shape, relation.shape)
-    #
-    #     att = self.att_vec2sca(self.relu(video + relation)) #(batch_size, nframe)
-    #     temp_att = self.softmax(att)
-    #     # print(temp_att.shape)
-    #
-    #     att_feat = (video * temp_att) #(batch_size, nframe, feat_dim)
-    #
-    #     # print(att_feat.shape)
-    #
-    #     return att_feat
+    def temporalAtt(self, input, context):
+        """
+        compute temporal self-attention
+        :param input:  (batch_size, seq_len, feat_dim)
+        :param context: (batch_size, feat_dim)
+        :return: vfeat: (batch_size, feat_dim)
+        """
+        # print(input.size(), context.size())
 
+        batch_size, seq_len, feat_dim = input.size()
+        context = context.repeat(1, seq_len, 1)
+        inputs = torch.cat((input, context), 2).view(-1, feat_dim*2)
+
+        o = self.transform_tempatt_bottom2(torch.tanh(self.transform_tempatt_bottom1(inputs)))
+        e = o.view(batch_size, seq_len)
+        beta = self.softmax(e)
+
+        vfeat = beta.unsqueeze(2)* input
+
+        return vfeat, beta
 
 
     def forward(self, videos, relation, mode='trainval'):
@@ -214,13 +220,13 @@ class AttHierarchicalGround(nn.Module):
 
         max_seg_num = frame_count / self.max_seg_len
 
-        x, relation_feat, sub_atts, obj_atts = self.spatialAtt(videos, relation)
+        ori_x, ori_relation_feat, sub_atts, obj_atts = self.spatialAtt(videos, relation)
 
-        x = self.transform_visual(x)
+        x_trans = self.transform_visual(ori_x)
 
-        # att_x = self.temporalAtt(x, relation_feat)
+        # x = self.layer_norm_visual(x_trans+ori_x)
 
-        within_seg_rnn_out, _ = self.within_seg_rnn(x)
+        within_seg_rnn_out, _ = self.within_seg_rnn(x_trans)
         self.within_seg_rnn.flatten_parameters()
 
         idx = np.round(np.linspace(self.max_seg_len-1, frame_count-1, max_seg_num))
@@ -232,16 +238,19 @@ class AttHierarchicalGround(nn.Module):
         # if idx[-1] != frame_count -1:
         #     seg_rnn_input = torch.cat((seg_rnn_input, within_seg_rnn_out[-1]))
 
-        # att_seg_rnn_input = self.temporalAtt(seg_rnn_input, relation_feat)
+        # trans_relation_feat = self.transform_rel(ori_relation_feat)
+        # relation_feat = self.layer_norm_rel(trans_relation_feat + ori_relation_feat)
+        #
+        # att_seg_rnn_input, beta1 = self.temporalAtt(seg_rnn_input, relation_feat)
 
         seg_out, hidden = self.seg_rnn(seg_rnn_input)
         self.seg_rnn.flatten_parameters()
 
-        output, beta = self.soft_attention(within_seg_rnn_out, hidden[0].squeeze(0)) #(batch_size, feat_dim)
+        output, beta2 = self.soft_attention(within_seg_rnn_out, hidden[0].squeeze(0)) #(batch_size, feat_dim)
 
         # output = hidden[0].squeeze(0)
         if mode == 'test':
-            return sub_atts, obj_atts, beta
+            return sub_atts, obj_atts, beta2
         else:
             return output, hidden
 
@@ -254,43 +263,6 @@ class DecoderRNN(nn.Module):
         self.lstm = nn.LSTM(embed_size, hidden_size, num_layers, batch_first=True)
         self.linear = nn.Linear(hidden_size, vocab_size)
         self.max_seq_length = max_seq_length
-        # self._init_weights()
-
-
-    def _init_weights(self):
-        """
-        Initialize some parameters with values from the uniform distribution
-        :return:
-        """
-        self.embed.weight.data.uniform_(-0.1, 0.1)
-        self.linear.bias.fill_(0)
-        self.linear.weight.data.uniform_(-0.1, 0.1)
-
-
-    def _init_rnn_state(self, hidden):
-        """
-        initialize hidden state of decode with hidden state of encoder
-        :param hidden:
-        :return:
-        """
-        if hidden is None:
-            return None
-        if isinstance(hidden, tuple):
-            hidden = tuple([self._cat_directions(h) for h in hidden])
-        else:
-            hidden = self._cat_directions(hidden)
-        return hidden
-
-    def _cat_directions(self, hidden):
-        """
-        if encoder is bi-directional, cat the bi-directional hidden state.
-        (#directions * #layers, #batch, dim_hidden) -> (#layers, #batch, #directions * dim_hidden)
-        :param hidden:
-        :return:
-        """
-        hidden = torch.cat([hidden[0:hidden.size(0):2], hidden[1:hidden.size(0):2]], 2)
-        return hidden
-
 
     def forward(self, video_out, video_hidden, relations, lengths):
         """
@@ -305,11 +277,6 @@ class DecoderRNN(nn.Module):
         batch_size, seq_len, _ = embeddings.size()
 
         embeddings = torch.cat((video_out.unsqueeze(1), embeddings), 1)
-        # print(embeddings.shape)
-
-        # context = video_out.unsqueeze(1).repeat(1, seq_len, 1)
-
-        # embeddings = torch.cat([embeddings, context], dim=2)
 
         packed = pack_padded_sequence(embeddings, lengths, batch_first=True)
 
@@ -333,27 +300,3 @@ class DecoderRNN(nn.Module):
 
         sampled_ids = torch.stack(sampled_ids, 1)
         return sampled_ids
-
-    # def sample(self, video_out, states=None):
-    #     """reconstruct relation using greedy search.
-    #     """
-    #     batch_size, _ = video_out.size()
-    #     sampled_ids = []
-    #     start_id = torch.LongTensor([1] * batch_size).cuda() # word id 1 is start signal
-    #     start_emded = self.embed(start_id)
-    #
-    #     # context = video_out.unsqueeze(1)
-    #
-    #     # inputs = torch.cat([start_emded.unsqueeze(1), context], dim=2)
-    #     inputs = start_emded.unsqueeze(1)
-    #     for i in range(self.max_seq_length):
-    #
-    #         hiddens, states = self.lstm(inputs, states)  # hiddens: (batch_size, 1, hidden_size)
-    #         outputs = self.linear(hiddens.squeeze(1))  # outputs:  (batch_size, vocab_size)
-    #         _, predicted = outputs.max(1)  # predicted: (batch_size)
-    #         sampled_ids.append(predicted)
-    #         inputs = self.embed(predicted)  # inputs: (batch_size, embed_size)
-    #         # inputs = torch.cat([inputs.unsqueeze(1), context], dim=2)  # inputs: (batch_size, 1, embed_size)
-    #         inputs = inputs.unsqueeze(1)
-    #     sampled_ids = torch.stack(sampled_ids, 1)  # sampled_ids: (batch_size, max_seq_length)
-    #     return sampled_ids
