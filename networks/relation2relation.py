@@ -37,9 +37,13 @@ class AttHierarchicalGround(nn.Module):
                                        nn.ReLU(),
                                        nn.Dropout(dropout))
 
-        self.embedding_visual = nn.Sequential(nn.Linear(visual_dim, self.embed_dim),
+        self.embedding_visual = nn.Sequential(nn.Linear(2048, self.embed_dim),
                                        nn.ReLU(),
                                        nn.Dropout(dropout))
+
+        self.embedding_location = nn.Sequential(nn.Linear(5, self.embed_dim),
+                                              nn.ReLU(),
+                                              nn.Dropout(dropout))
 
         self.transform_spatt1 = nn.Linear(self.embed_dim*2, self.embed_dim)
         self.transform_spatt2 = nn.Linear(self.embed_dim, 1, bias=False)
@@ -148,7 +152,12 @@ class AttHierarchicalGround(nn.Module):
         obj_satt_values = None
 
         batch_size, frame_count, nbbox, feat_dim = videos.size()
-        video_embeds = self.embedding_visual(videos.view(-1, feat_dim))
+        videos = videos.view(-1, feat_dim)
+        videos_visual = videos[:, :-5]
+        videos_bbox = videos[:, -5:]
+        visual_embeds = self.embedding_visual(videos_visual)
+        bbox_embeds = self.embedding_location(videos_bbox)
+        video_embeds = visual_embeds + bbox_embeds
         video_embeds = video_embeds.view(batch_size, frame_count, nbbox, -1)
 
         for bs in range(batch_size):
@@ -164,11 +173,24 @@ class AttHierarchicalGround(nn.Module):
             subject_feat, sub_att = self.attend_semantics(video_embed, subject_embed)
             object_feat, obj_att = self.attend_semantics(video_embed, object_embed)
 
+            # sub_idx = torch.argmax(sub_att, 1)
+            # obj_idx = torch.argmax(obj_att, 1)
+            # raw_sub_feat = None
+            # raw_obj_feat = None
+            #
+            # for i in range(frame_count):
+            #     if i == 0:
+            #         raw_sub_feat = video_embed[i, sub_idx[i]].unsqueeze(0)
+            #         raw_obj_feat = video_embed[i, obj_idx[i]].unsqueeze(0)
+            #     else:
+            #         raw_sub_feat = torch.cat((raw_sub_feat, video_embed[i, sub_idx[i]].unsqueeze(0)), 0)
+            #         raw_obj_feat = torch.cat((raw_obj_feat, video_embed[i, obj_idx[i]].unsqueeze(0)), 0)
+
             s2o_feat = self.msg_sub2obj(sub_att)
             o2s_feat = self.msg_obj2sub(obj_att)
 
-            final_subject_feat = subject_feat+o2s_feat
-            final_object_feat = object_feat+s2o_feat
+            final_subject_feat = subject_feat + o2s_feat
+            final_object_feat = object_feat + s2o_feat
 
             # final_subject_feat = subject_feat
             # final_object_feat = object_feat

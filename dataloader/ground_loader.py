@@ -29,9 +29,28 @@ class RelationDataset(Dataset):
     def __len__(self):
         return len(self.sample_list)
 
+    def select_bbox(self, roi_bbox, roi_classme, width, height):
+        """
+        select the bboxes with maximun confidence
+        :param roi_bbox:
+        :param roi_classme:
+        :return:
+        """
+        bbox, classme = roi_bbox.squeeze(), roi_classme.squeeze()
+        classme = classme[:, 1:]  # skip background
+        index = np.argmax(classme, 1)
+        bbox = np.asarray([bbox[i][4 * (index[i] + 1):4 * (index[i] + 1) + 4] for i in range(len(bbox))])
+        relative_bbox = bbox / np.asarray([width, height, width, height])
+        area = (bbox[:,2]-bbox[:,0]+1)*(bbox[:,3]-bbox[:,1]+1)
+        relative_area = area/(width*height)
+        relative_area = relative_area.reshape(-1, 1)
+        relative_bbox = np.hstack((relative_bbox, relative_area))
+
+        return relative_bbox
+
+
     def get_video_feature(self, video_name, frame_count, width, height):
         """
-
         :param video_name:
         :param frame_count:
         :param width:
@@ -39,20 +58,20 @@ class RelationDataset(Dataset):
         :return:
         """
         video_feature_folder = osp.join(self.video_feature_path, video_name)
-
-
         sample_frames = np.round(np.linspace(0, frame_count - 1, self.frame_steps))
-
 
         video_feature = torch.zeros(len(sample_frames), self.nbbox, self.feat_dim)
         for i, fid in enumerate(sample_frames):
             frame_name = osp.join(video_feature_folder, str(int(fid)).zfill(6)+'.pkl')
-            # bbox, classme, feat = load_predict(frame_name, self.nbbox)
             with open(frame_name, 'rb') as fp:
-                feat = pkl.load(fp)['cls_prob']
-            video_feature[i] = torch.Tensor(feat)
+                feat = pkl.load(fp)
+            roi_feat = feat['roi_feat'] #40x2048
+            roi_bbox = feat['bbox']
+            roi_classme = feat['cls_prob'] #40 x 81
+            bbox = self.select_bbox(roi_bbox, roi_classme, width, height) # 40 x 5
+            cb_feat = np.hstack((roi_feat, bbox))
 
-        # print(video_feature[10])
+            video_feature[i] = torch.Tensor(cb_feat)
 
         return video_feature
 
@@ -63,15 +82,18 @@ class RelationDataset(Dataset):
         :param relation:
         :return:
         """
-        table = str.maketrans('-_', '  ')
-        relation = relation.translate(table)
+        # relation = relation.split('-')
+        # relation = '-'.join([relation[0],relation[-1]])
 
-        tokens = nltk.tokenize.word_tokenize(str(relation).lower())
-        relation = []
-        relation.append(self.vocab('<start>'))
-        relation.extend([self.vocab(token) for token in tokens])
-        relation.append(self.vocab('<end>'))
-        target = torch.Tensor(relation)
+        table = str.maketrans('-_', '  ')
+        relation_trans = relation.translate(table)
+
+        tokens = nltk.tokenize.word_tokenize(str(relation_trans).lower())
+        relation_token = []
+        relation_token.append(self.vocab('<start>'))
+        relation_token.extend([self.vocab(token) for token in tokens])
+        relation_token.append(self.vocab('<end>'))
+        target = torch.Tensor(relation_token)
 
         return target
 
@@ -86,8 +108,9 @@ class RelationDataset(Dataset):
         """
         video_name, frame_count, width, height, relation = self.sample_list[idx]
         video_feature = self.get_video_feature(video_name, frame_count, width, height)
+
         relation2idx = self.get_word_idx(relation)
-        return video_feature, relation2idx, relation
+        return video_feature, relation2idx, relation, video_name
 
 
 class RelationLoader():
@@ -105,14 +128,17 @@ class RelationLoader():
         self.val_shuffle = val_shuffle
 
 
-    def run(self):
-        train_loader = self.train()
+    def run(self, mode=''):
+        if mode == 'val':
+            train_loader = ''
+        else:
+            train_loader = self.train()
         val_loader = self.validate()
         return train_loader, val_loader
 
     def train(self):
         # print("Now in train")
-        # applying trabsformation on training videos
+        # applying transformation on training videos
         training_set = RelationDataset(self.video_feature_path, self.sample_list_path,
                                        self.vocab, 'train', self.nframes, self.nbbox,
                                        self.visual_dim)
@@ -152,13 +178,14 @@ def collate_fn (data):
                 -video: torch tensor of shape (nframe, nbbox, feat_dim)
                 -relation2idx: torch tensor of variable length
                 -relation: raw relation
+                -video_name: str
     :return:
         images: torch tensor of shape (batch_size, nframe, nbbox, feat_dim)
         targets: torch tensor of shape (batch_size, padded_length)
         length: valid length for each padded length
     """
     data.sort(key=lambda x : len(x[1]), reverse=True)
-    videos, relation2idx, relations= zip(*data)
+    videos, relation2idx, relations, video_name = zip(*data)
 
     #merge videos
     videos = torch.stack(videos, 0)
@@ -170,4 +197,4 @@ def collate_fn (data):
         end = lengths[i]
         targets[i, :end] = rel[:end]
 
-    return relations, videos, targets, lengths
+    return relations, videos, targets, lengths, video_name
