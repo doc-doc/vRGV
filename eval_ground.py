@@ -1,7 +1,6 @@
 import os.path as osp
-import numpy as np
-from common import voc_ap, tiou
-from util import load_file
+from evaluations.common import tiou
+from evaluations.util import load_file
 
 def eval_ground_scores(gt_relations, pred_relations, tiou_threshold):
     """
@@ -23,7 +22,7 @@ def eval_ground_scores(gt_relations, pred_relations, tiou_threshold):
 
         gt_trajs = gt_relations[relation]
 
-        print(relation)
+        # print(relation)
 
         for gt_traj in gt_trajs:
             gt_sub = gt_traj['sub']
@@ -59,7 +58,7 @@ def evaluate(groundtruth, prediction, tiou_threshold=0.5):
 
     video_num = len(groundtruth)
     print('Computing grounding accuracy over {} videos...'.format(video_num))
-    acc, acc_sub, acc_obj = 0, 0, 0
+    acc, acc_sub, acc_obj = 0.0, 0.0, 0.0
 
     gt_rnum = 0
     for qid, relation_gt in groundtruth.items():
@@ -69,9 +68,9 @@ def evaluate(groundtruth, prediction, tiou_threshold=0.5):
         relation_pred = prediction[qid]
         if len(relation_pred) == 0:
             continue
-        print(qid)
+        # print(qid)
         video_acc, video_acc_sub, video_acc_obj, relation_num = eval_ground_scores(relation_gt, relation_pred, tiou_threshold)
-        # print('{} {:.6f} {:.6f} {:.6f}'.format(qid, video_acc_sub, video_acc_obj, video_acc))
+        print('{} {:.6f} {:.6f} {:.6f}'.format(qid, video_acc_sub, video_acc_obj, video_acc))
 
         acc += video_acc
         acc_sub += video_acc_sub
@@ -90,11 +89,11 @@ def evaluate(groundtruth, prediction, tiou_threshold=0.5):
 
 def main():
 
-    groundtruth_dir = '../dataset/vidvrd/'
+    groundtruth_dir = 'dataset/vidvrd/'
     gt_file = osp.join(groundtruth_dir, 'gt_relation_frame.json')
 
-    result_dir = '../results/'
-    res_file = osp.join(result_dir, 'ground_result.json')
+    result_dir = 'results/'
+    res_file = osp.join(result_dir, 'ground_result_visual_worsubobj_bbox_trans.json')
 
     grountruth = load_file(gt_file)
     prediction = load_file(res_file)
