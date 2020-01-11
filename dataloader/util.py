@@ -7,7 +7,7 @@
 import json
 import os
 import os.path as osp
-
+import numpy as np
 
 def load_file(file_name):
 
@@ -19,8 +19,6 @@ def load_file(file_name):
             annos = json.load(fp)
 
     return annos
-
-
 
 
 
@@ -36,8 +34,17 @@ def get_video_frames(video_relation_file):
             continue
 
     all_frames = []
+    sample_num = 512
+
     for video, nframe in vframes.items():
-        fnames = [osp.join(video, str(fid).zfill(6)) for fid in range(nframe)]
+        # if video == '1052/5441845281':
+        #     print(video, nframe)
+        samples = np.round(np.linspace(
+            1, nframe, sample_num))
+
+        samples = set([int(s) for s in samples])
+        samples = list(samples)
+        fnames = [osp.join(video, str(fid).zfill(6)) for fid in samples]
         if all_frames == []:
             all_frames = fnames
         else:
