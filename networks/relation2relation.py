@@ -37,7 +37,7 @@ class AttHierarchicalGround(nn.Module):
                                        nn.ReLU(),
                                        nn.Dropout(dropout))
 
-        self.embedding_visual = nn.Sequential(nn.Linear(2048, self.embed_dim),
+        self.embedding_visual = nn.Sequential(nn.Linear(visual_dim-5, self.embed_dim),
                                        nn.ReLU(),
                                        nn.Dropout(dropout))
 
@@ -48,8 +48,8 @@ class AttHierarchicalGround(nn.Module):
         self.transform_spatt1 = nn.Linear(self.embed_dim*2, self.embed_dim)
         self.transform_spatt2 = nn.Linear(self.embed_dim, 1, bias=False)
 
-        # self.transform_tempatt_bottom1 = nn.Linear(self.hidden_size*2, self.hidden_size)
-        # self.transform_tempatt_bottom2 = nn.Linear(self.hidden_size, 1, bias=False)
+        self.transform_tempatt_bottom1 = nn.Linear(self.hidden_size*2, self.hidden_size)
+        self.transform_tempatt_bottom2 = nn.Linear(self.hidden_size, 1, bias=False)
 
         self.msg_sub2obj = nn.Sequential(nn.Linear(40, self.embed_dim),
                                        nn.ReLU(),
@@ -65,17 +65,13 @@ class AttHierarchicalGround(nn.Module):
         # affine transformation for context
         self.linear2 = nn.Linear(hidden_size, 1, bias=False)
 
-        # self.att_vec2sca = nn.Linear(hidden_size, 1, bias=False)
-
         self.transform_visual = nn.Sequential(nn.Linear(hidden_size, hidden_size),
                                        nn.ReLU(),
                                        nn.Dropout(dropout))
-        # self.layer_norm_visual = nn.LayerNorm(hidden_size, eps=1e-6)
 
-        # self.transform_rel = nn.Sequential(nn.Linear(hidden_size, hidden_size),
-        #                                nn.ReLU(),
-        #                                nn.Dropout(dropout))
-        # self.layer_norm_rel = nn.LayerNorm(hidden_size, eps=1e-6)
+        self.transform_rel = nn.Sequential(nn.Linear(hidden_size, hidden_size),
+                                       nn.ReLU(),
+                                       nn.Dropout(dropout))
 
         self.relu = nn.ReLU()
         self.softmax = nn.Softmax(dim=1)
@@ -117,7 +113,6 @@ class AttHierarchicalGround(nn.Module):
             word_embed = Variable(torch.zeros(1, self.word_dim))
 
         word_embed = self.embedding_word(word_embed.cuda())
-        # word_embed = word_embed.cuda()
 
         return word_embed
 
@@ -173,19 +168,6 @@ class AttHierarchicalGround(nn.Module):
             subject_feat, sub_att = self.attend_semantics(video_embed, subject_embed)
             object_feat, obj_att = self.attend_semantics(video_embed, object_embed)
 
-            # sub_idx = torch.argmax(sub_att, 1)
-            # obj_idx = torch.argmax(obj_att, 1)
-            # raw_sub_feat = None
-            # raw_obj_feat = None
-            #
-            # for i in range(frame_count):
-            #     if i == 0:
-            #         raw_sub_feat = video_embed[i, sub_idx[i]].unsqueeze(0)
-            #         raw_obj_feat = video_embed[i, obj_idx[i]].unsqueeze(0)
-            #     else:
-            #         raw_sub_feat = torch.cat((raw_sub_feat, video_embed[i, sub_idx[i]].unsqueeze(0)), 0)
-            #         raw_obj_feat = torch.cat((raw_obj_feat, video_embed[i, obj_idx[i]].unsqueeze(0)), 0)
-
             s2o_feat = self.msg_sub2obj(sub_att)
             o2s_feat = self.msg_obj2sub(obj_att)
 
@@ -224,6 +206,7 @@ class AttHierarchicalGround(nn.Module):
         # print(input.size(), context.size())
 
         batch_size, seq_len, feat_dim = input.size()
+        # context = context.unsqueeze(1)
         context = context.repeat(1, seq_len, 1)
         inputs = torch.cat((input, context), 2).view(-1, feat_dim*2)
 
@@ -232,21 +215,21 @@ class AttHierarchicalGround(nn.Module):
         beta = self.softmax(e)
 
         vfeat = beta.unsqueeze(2)* input
+        # vfeat = torch.bmm(beta.unsqueeze(1), input)
 
         return vfeat, beta
 
 
-    def forward(self, videos, relation, mode='trainval'):
+    def forward(self, videos, relation_text, mode='trainval'):
 
         frame_count = videos.shape[1]
 
         max_seg_num = frame_count / self.max_seg_len
 
-        ori_x, ori_relation_feat, sub_atts, obj_atts = self.spatialAtt(videos, relation)
+        #SAU & MSG
+        ori_x, ori_relation_feat, sub_atts, obj_atts = self.spatialAtt(videos, relation_text)
 
         x_trans = self.transform_visual(ori_x)
-
-        # x = self.layer_norm_visual(x_trans+ori_x)
 
         within_seg_rnn_out, _ = self.within_seg_rnn(x_trans)
         self.within_seg_rnn.flatten_parameters()
@@ -257,22 +240,32 @@ class AttHierarchicalGround(nn.Module):
 
         seg_rnn_input = within_seg_rnn_out[:,idx,:]
 
-        # if idx[-1] != frame_count -1:
-        #     seg_rnn_input = torch.cat((seg_rnn_input, within_seg_rnn_out[-1]))
-
-        # trans_relation_feat = self.transform_rel(ori_relation_feat)
-        # relation_feat = self.layer_norm_rel(trans_relation_feat + ori_relation_feat)
+        trans_relation_feat = self.transform_rel(ori_relation_feat)
+        att_seg_rnn_input, beta1 = self.temporalAtt(seg_rnn_input, trans_relation_feat)
         #
-        # att_seg_rnn_input, beta1 = self.temporalAtt(seg_rnn_input, relation_feat)
+        # att_seg_rnn_input, beta1 = None, None
+        # #Hierarchical-TAU
+        # for i in range(len(idx)):
+        #     if i == 0:
+        #         input = x_trans[:, 0:idx[i]+1,:]
+        #         context = seg_rnn_input[:, i, :]
+        #         att_seg_rnn_input_tmp, beta = self.temporalAtt(input, context)
+        #         att_seg_rnn_input = att_seg_rnn_input_tmp
+        #         beta1 = beta
+        #
+        #     else:
+        #         att_seg_rnn_input_tmp, beta = self.temporalAtt(x_trans[:,idx[i-1]:idx[i], :], seg_rnn_input[:,i, :])
+        #         att_seg_rnn_input = torch.cat((att_seg_rnn_input, att_seg_rnn_input_tmp),dim=1)
+        #         beta1 = torch.cat((beta1, beta), dim=1)
 
-        seg_out, hidden = self.seg_rnn(seg_rnn_input)
+        seg_out, hidden = self.seg_rnn(att_seg_rnn_input)
         self.seg_rnn.flatten_parameters()
 
         output, beta2 = self.soft_attention(within_seg_rnn_out, hidden[0].squeeze(0)) #(batch_size, feat_dim)
 
         # output = hidden[0].squeeze(0)
         if mode == 'test':
-            return sub_atts, obj_atts, beta2
+            return sub_atts, obj_atts, beta2, beta1
         else:
             return output, hidden
 

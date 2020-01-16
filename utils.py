@@ -7,6 +7,8 @@
 import json
 import os
 import os.path as osp
+import shutil
+import numpy as np
 
 
 def clip_gradient(optimizer, grad_clip):
@@ -31,4 +33,33 @@ def save_results(save_name, data):
 
     with open(save_name, 'w') as fp:
         json.dump(data, fp)
+
+
+def delete(vname):
+    if vname != '':
+        frame_dir = '../ground_data/vidor/frames/'
+        print('Clean up {}'.format(vname))
+        shutil.rmtree(osp.join(frame_dir, vname))
+
+def sort_bbox(bboxes, width, height):
+    """
+    sort bbox according to the top-left to bottom-right order
+    :param bboxes:
+    :return:
+    """
+    x_c = (bboxes[:, 2] - bboxes[:, 0]) / 2
+    y_c = (bboxes[:, 3] - bboxes[:, 1]) / 2
+
+    points =  []
+    for x, y in zip(x_c, y_c):
+        points.append((y-1)*width+x)
+
+    index = np.argsort(points)
+
+    return index
+
+
+
+
+
 
