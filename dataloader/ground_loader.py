@@ -6,17 +6,16 @@
 # ====================================================
 import torch
 from torch.utils.data import Dataset, DataLoader
-from .util import load_file
+from .util import load_file, pkdump, pkload
 import os.path as osp
-import pickle as pkl
 import numpy as np
 import nltk
-import string
+import pickle as pkl
 
 class RelationDataset(Dataset):
     """load the dataset in dataloader"""
 
-    def __init__(self, video_feature_path, sample_list_path, vocab, mode, nframes, nbbox, visual_dim):
+    def __init__(self, video_feature_path, video_feature_cache, sample_list_path, vocab, mode, nframes, nbbox, visual_dim):
         self.video_feature_path = video_feature_path
         self.vocab = vocab
         self.frame_steps = nframes
@@ -24,6 +23,7 @@ class RelationDataset(Dataset):
         sample_list_file = osp.join(sample_list_path, 'vrelation_{}.json'.format(mode))
         self.sample_list = load_file(sample_list_file)
         self.feat_dim = visual_dim
+        self.video_feature_cache = video_feature_cache
 
 
     def __len__(self):
@@ -58,8 +58,11 @@ class RelationDataset(Dataset):
         :return:
         """
         video_feature_folder = osp.join(self.video_feature_path, video_name)
+        cache_file = osp.join(self.video_feature_cache, '{}.pkl'.format(video_name))
+        if osp.exists(cache_file) and osp.getsize(cache_file) > 0:
+            video_feature = pkload(cache_file)
+            return video_feature
         sample_frames = np.round(np.linspace(0, frame_count - 1, self.frame_steps))
-
         video_feature = torch.zeros(len(sample_frames), self.nbbox, self.feat_dim)
         for i, fid in enumerate(sample_frames):
             frame_name = osp.join(video_feature_folder, str(int(fid)).zfill(6)+'.pkl')
@@ -72,6 +75,8 @@ class RelationDataset(Dataset):
             cb_feat = np.hstack((roi_feat, bbox))
 
             video_feature[i] = torch.Tensor(cb_feat)
+
+        pkdump(video_feature, cache_file)
 
         return video_feature
 
@@ -114,11 +119,12 @@ class RelationDataset(Dataset):
 
 
 class RelationLoader():
-    def __init__(self, batch_size, num_worker, video_feature_path,
+    def __init__(self, batch_size, num_worker, video_feature_path, video_feature_cache,
                  sample_list_path, vocab, nframes, nbbox, visual_dim, train_shuffle=True, val_shuffle=False):
         self.batch_size = batch_size
         self.num_worker = num_worker
         self.video_feature_path = video_feature_path
+        self.video_feature_cache = video_feature_cache
         self.sample_list_path = sample_list_path
         self.vocab = vocab
         self.nframes = nframes
@@ -139,7 +145,7 @@ class RelationLoader():
     def train(self):
         # print("Now in train")
         # applying transformation on training videos
-        training_set = RelationDataset(self.video_feature_path, self.sample_list_path,
+        training_set = RelationDataset(self.video_feature_path, self.video_feature_cache, self.sample_list_path,
                                        self.vocab, 'train', self.nframes, self.nbbox,
                                        self.visual_dim)
 
@@ -156,7 +162,7 @@ class RelationLoader():
     def validate(self):
         # print("Now in Validate")
         # applying transformation for validation videos
-        validation_set = RelationDataset(self.video_feature_path, self.sample_list_path,
+        validation_set = RelationDataset(self.video_feature_path, self.video_feature_cache, self.sample_list_path,
                                          self.vocab, 'val', self.nframes, self.nbbox,
                                          self.visual_dim)
 

@@ -8,6 +8,7 @@ import json
 import os
 import os.path as osp
 import numpy as np
+import pickle as pkl
 
 def load_file(file_name):
 
@@ -20,7 +21,17 @@ def load_file(file_name):
 
     return annos
 
+def pkload(file):
+    with open(file, 'rb') as fp:
+        data = pkl.load(fp)
+    return data
 
+def pkdump(data, file):
+    dirname = osp.dirname(file)
+    if not osp.exists(dirname):
+        os.makedirs(dirname)
+    with open(file, 'wb') as fp:
+        pkl.dump(data, fp)
 
 def get_video_frames(video_relation_file):
 
