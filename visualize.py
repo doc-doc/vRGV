@@ -123,7 +123,40 @@ def show_instance(instances, video_name, relation):
         break
     cv2.destroyAllWindows()
 
+def vis_prediction_online(ins, vname, relation):
 
+    video_dir = '../vdata/JPEGImages/'
+    video_name = osp.join(video_dir,vname)
+    spo = relation.split('-')
+    sub, obj = ins['sub'], ins['obj']
+    if 'score' in ins:
+        score = ins['score']
+    else:
+        score = 1.
+
+    for fid in sub:
+        captions = []
+        caption, caption_obj = {}, {}
+        # subject
+        caption['fid'] = fid
+        caption['bbox'] = sub[fid]
+        caption['name'] = spo[0]
+        caption['track_id'] = 0
+        captions.append(caption)
+        # object
+        caption_obj['fid'] = fid
+        caption_obj['bbox'] = obj[fid]
+        caption_obj['name'] = spo[2]
+        caption_obj['track_id'] = 1
+        captions.append(caption_obj)
+
+        img = cv2.imread(osp.join(video_name, '{:06d}.JPEG'.format(int(fid))))
+        image = image_relation(img, captions, spo[1], score)
+        cv2.imshow(video_name, image)
+        if cv2.waitKey(1) and 0xFF == ord('q'):
+            break
+
+    cv2.destroyAllWindows()
 
 def vis_video_relation(video_name, anno_file, query, save=False):
     """"""
@@ -189,7 +222,7 @@ def vis_video_relation(video_name, anno_file, query, save=False):
 
         if save:
             vid_out.close()
-            break
+            # break
     cv2.destroyAllWindows()
 
 
@@ -197,14 +230,14 @@ def main():
 
     root_dir = '../vdata/'
     video_dir = root_dir + 'JPEGImages/'
-    # 00091008, 00119046, 00272006, 00125015, 00223001, 00091004, 00190000, 00142000, 00177011, 00416000
-    video_name = video_dir + 'ILSVRC2015_train_00010029' #ILSVRC2015_train_00010001' #'ILSVRC2015_train_00225000'
+    # 000960000, 00119046, 00272006, 00125015, 00223001, 00091004, 00190000, 00142000, 00177011, 00416000
+    video_name = video_dir + 'ILSVRC2015_train_00010001' # 'ILSVRC2015_train_00071007' #ILSVRC2015_train_00010001' #'ILSVRC2015_train_00225000'
 
-    anno_file_pred = 'results/ground_result.json'
+    anno_file_pred = 'results/ground_result_visual_bbox_trans_temp2_thd004.json'
 
     #query = ('bicycle', 'move_beneath', 'person')
     query = ('person', 'ride', 'bicycle')
-    vis_video_relation(video_name, anno_file_pred, query)
+    vis_video_relation(video_name, anno_file_pred, query, save=True)
 
 
 if __name__ == "__main__":
