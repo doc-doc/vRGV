@@ -1,3 +1,3 @@
-# R2R
+# vRGV
 Visual Relation Grounding in Videos
 
