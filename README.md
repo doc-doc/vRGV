@@ -10,9 +10,9 @@ The repository mainly includes 3 parts: (1) Extract RoI feature; (2) Train and i
 Anaconda 3 with Python 3.6.5 and pytorch 0.4.1. For others libs, please refer to the file requirements.txt.
 
 ## Install
-Please creat an envs for this project using anaconda3 (should install [anaconda](https://docs.anaconda.com/anaconda/install/linux/) first)
+Please create an envs for this project using anaconda3 (should install [anaconda](https://docs.anaconda.com/anaconda/install/linux/) first)
 ```
->conda creat -n envname python=3.6 #create
+>conda create -n envname python=3.6 #create
 >conda activate envname #enter
 >pip install -r requirements.txt #blindly install the provided libs 
 ```
