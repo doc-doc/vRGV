@@ -56,4 +56,4 @@ If you find the codes useful in your research, please kindly cite:
 
 ## License
 
-NUS © NExT++
+NUS © [NExT++](https://nextcenter.org/)
