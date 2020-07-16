@@ -12,7 +12,7 @@ Anaconda 3, python 3.6.5, pytorch 0.4.1 and cuda >= 9.0. For others libs, please
 ## Install
 Please create an envs for this project using anaconda3 (should install [anaconda](https://docs.anaconda.com/anaconda/install/linux/) first)
 ```
->conda create -n envname python=3.6 #create
+>conda create -n envname python=3.6.5 #create
 >conda activate envname #enter
 >pip install -r requirements.txt #blindly install the provided libs 
 ```
