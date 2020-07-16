@@ -17,7 +17,7 @@ Please creat an envs for this project using anaconda3 (should install [anaconda]
 >pip install -r requirements.txt #blindly install the provided libs 
 ```
 ## Data Preparation
-Please download the data [here](). The folder [ground_data] should be at the same directory as vRGV [this project]. Please merge the downloaded vRGV folder with this repo. 
+Please download the data [here](https://drive.google.com/file/d/1eHi5BTFxseXdEyDLFRLxFaHkO4xQYehp/view?usp=sharing). The folder [ground_data] should be at the same directory as vRGV [this project]. Please merge the downloaded vRGV folder with this repo. 
 
 Please download the raw videos [here](https://xdshang.github.io/docs/imagenet-vidvrd.html), and extract them into ground_data/vidvrd/JPEGImages/
 
@@ -49,7 +49,7 @@ If you find the codes useful in your research, please kindly cite:
   title={Visual Relation Grounding in Videos},
   author={Junbin, Xiao and Xindi, Shang and Xun, Yang and Sheng, Tang and Tat-Seng, Chua},
   booktitle={Proceedings of the European Conference on Computer Vision (ECCV)},
-  pages={6867--6876},
+  pages={0000--0017},
   year={2020}
 }
 ```
