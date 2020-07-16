@@ -175,7 +175,7 @@ def vis_video_relation(video_name, anno_file, query, save=False):
         data = vio.ffprobe(v_name)['video']
         fps = data['@r_frame_rate']
     for relation, ins in vanno.items():
-        # if relation != query: continue
+        if relation != query: continue
         spo = relation.split('-')
 
         if save:
@@ -230,14 +230,13 @@ def main():
 
     root_dir = '../ground_data/vidvrd/'
     video_dir = root_dir + 'JPEGImages/'
-    # 000960000, 00119046, 00272006, 00125015, 00223001, 00091004, 00190000, 00142000, 00177011, 00416000
-    video_name = video_dir + 'ILSVRC2015_train_00010001' # 'ILSVRC2015_train_00071007' #ILSVRC2015_train_00010001' #'ILSVRC2015_train_00225000'
+    video_name = video_dir + 'ILSVRC2015_train_00071007'
 
-    anno_file_pred = 'results/test_viterbi_1gap_04.json'
+    anno_file_pred = 'results/test_viterbi_1gap.json'
 
     #query = ('bicycle', 'move_beneath', 'person')
     query = ('person', 'ride', 'bicycle')
-    vis_video_relation(video_name, anno_file_pred, query, save=True)
+    vis_video_relation(video_name, anno_file_pred, query, save=False)
 
 
 if __name__ == "__main__":
