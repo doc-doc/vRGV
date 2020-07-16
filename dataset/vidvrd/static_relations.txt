@@ -1,0 +1,15 @@
+above
+beneath
+left
+right
+front
+behind
+taller
+larger
+next
+lie
+sit
+stand
+stop
+hold
+bite

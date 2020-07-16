@@ -5,4 +5,4 @@
 # Created Time: Wed 20 Nov 2019 11:10:44 AM +08
 #########################################################################
 #!/bin/bash
-CUDA_VISIBLE_DEVICES=1 python detection.py
+CUDA_VISIBLE_DEVICES=0 python detection.py

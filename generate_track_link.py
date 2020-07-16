@@ -14,7 +14,7 @@ import time
 from visualize import vis_prediction_online
 
 sample_fnum = 120
-beta_thresh = 0.01
+beta_thresh = 0.04
 
 def load_video_bbox(vname, feat_dir, nframe):
     """
@@ -160,7 +160,7 @@ def main(res_file):
     data_dir = '../ground_data/'
     dataset = 'vidvrd'
     val_list_file = 'dataset/{}/vrelation_val.json'.format(dataset)
-    result_dir = '{}/results/{}_co'.format(data_dir, dataset)
+    result_dir = '{}/results/{}'.format(data_dir, dataset)
 
     feat_dir = osp.join(data_dir, dataset, 'frame_feature')
     bbox_dir = osp.join(data_dir, dataset, 'bbox')
@@ -168,5 +168,5 @@ def main(res_file):
 
 
 if __name__ == "__main__":
-    res_file = 'results/test_viterbi_1gap_01.json'
+    res_file = 'results/test_viterbi_1gap_04.json'
     main(res_file)

@@ -86,15 +86,8 @@ class GroundRelation():
 
         self.relation_reconstruction.load_state_dict(new_reconstruct_dict)
 
-        # self.relation_ground.load_state_dict({k:v for k,v in ground_dict.items()
-        #                                       if k in self.relation_ground.state_dict()})
-        #
-        # self.relation_reconstruction.load_state_dict({k:v for k,v in reconstruct_dict.items()
-        #                                               if k in self.relation_reconstruction.state_dict()})
 
-
-
-    def run(self, pretrain='False'):
+    def run(self, pretrain=False):
 
         self.build_model()
         if pretrain:
@@ -150,9 +143,6 @@ class GroundRelation():
 
             cur_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             if iter % self.vis_step == 0:
-                # print(video_out[0, 0:100:10])
-                # print(torch.argmax(relation_decode, 1))
-                # print(targets)
 
                 print('    [{}/{}]-{}-{:.4f}-{:5.4f}'.
                       format(iter, total_step, cur_time,  loss.item(), np.exp(loss.item())))
@@ -167,12 +157,6 @@ class GroundRelation():
 
         self.relation_ground.eval()
         self.relation_reconstruction.eval()
-
-        # ground_model_path = osp.join(self.model_dir, 'relation_ground-{}.ckpt'.format(epoch))
-        # reconstruction_path = osp.join(self.model_dir, 'reconstruction-{}.ckpt'.format(epoch))
-        # self.relation_ground.load_state_dict(torch.load(ground_model_path))
-        # self.relation_reconstruction.load_state_dict(torch.load(reconstruction_path))
-
 
         total_step = len(self.val_loader)
         epoch_loss = 0
@@ -189,10 +173,6 @@ class GroundRelation():
 
             cur_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             if iter % self.vis_step == 0:
-                # print(video_out[0, 100:150])
-                # print(torch.argmax(relation_decode, 1))
-                # print(targets)
-
                 print('    [{}/{}]-{}-{:.4f}-{:5.4f}'.
                       format(iter, total_step, cur_time,  loss.item(), np.exp(loss.item())))
 
@@ -268,24 +248,24 @@ class GroundRelation():
 
             vname = video_names[0]
             videos = videos.to(self.device)
-            sub_atts, obj_atts, beta2 = self.relation_ground(videos, relation_text, mode='test')
+            sub_atts, obj_atts, beta1, beta2 = self.relation_ground(videos, relation_text, mode='val')
 
             data_sub_atts = sub_atts.data.cpu().numpy()
             data_obj_atts = obj_atts.data.cpu().numpy()
-            data_beta = beta2.data.cpu().numpy()
-            # data_beta1 = beta1.data.cpu().numpy()
+            data_beta2 = beta2.data.cpu().numpy()
+            data_beta1 = beta1.data.cpu().numpy()
 
             data = {}
             data['sub'] = data_sub_atts.tolist()
             data['obj'] = data_obj_atts.tolist()
-            data['beta'] = data_beta.tolist()
-            # data['beta1'] = data_beta1.tolist()
+            data['beta2'] = data_beta2.tolist()
+            data['beta1'] = data_beta1.tolist()
 
 
             if (vname != pre_vname and iter > 0) or (iter == total-1):
                 if iter == total-1:
                     video[relation_text[0]] = data
-                save_name = '../ground_data/results/vidvrd/'+pre_vname+'.json'
+                save_name = '../ground_data/results/vidvrd_new/'+pre_vname+'.json'
                 save_results(save_name, video)
                 video = {}
 

@@ -220,7 +220,7 @@ class AttHierarchicalGround(nn.Module):
         return vfeat, beta
 
 
-    def forward(self, videos, relation_text, mode='trainval'):
+    def forward(self, videos, relation_text, mode='train'):
 
         frame_count = videos.shape[1]
 
@@ -241,31 +241,16 @@ class AttHierarchicalGround(nn.Module):
         seg_rnn_input = within_seg_rnn_out[:,idx,:]
 
         trans_relation_feat = self.transform_rel(ori_relation_feat)
-        att_seg_rnn_input, beta1 = self.temporalAtt(seg_rnn_input, trans_relation_feat)
-        #
-        # att_seg_rnn_input, beta1 = None, None
-        # #Hierarchical-TAU
-        # for i in range(len(idx)):
-        #     if i == 0:
-        #         input = x_trans[:, 0:idx[i]+1,:]
-        #         context = seg_rnn_input[:, i, :]
-        #         att_seg_rnn_input_tmp, beta = self.temporalAtt(input, context)
-        #         att_seg_rnn_input = att_seg_rnn_input_tmp
-        #         beta1 = beta
-        #
-        #     else:
-        #         att_seg_rnn_input_tmp, beta = self.temporalAtt(x_trans[:,idx[i-1]:idx[i], :], seg_rnn_input[:,i, :])
-        #         att_seg_rnn_input = torch.cat((att_seg_rnn_input, att_seg_rnn_input_tmp),dim=1)
-        #         beta1 = torch.cat((beta1, beta), dim=1)
+        att_seg_rnn_input, beta2 = self.temporalAtt(seg_rnn_input, trans_relation_feat)
 
         seg_out, hidden = self.seg_rnn(att_seg_rnn_input)
         self.seg_rnn.flatten_parameters()
 
-        output, beta2 = self.soft_attention(within_seg_rnn_out, hidden[0].squeeze(0)) #(batch_size, feat_dim)
+        output, beta1 = self.soft_attention(within_seg_rnn_out, hidden[0].squeeze(0)) #(batch_size, feat_dim)
 
         # output = hidden[0].squeeze(0)
-        if mode == 'test':
-            return sub_atts, obj_atts, beta2, beta1
+        if mode != 'train':
+            return sub_atts, obj_atts, beta1, beta2
         else:
             return output, hidden
 

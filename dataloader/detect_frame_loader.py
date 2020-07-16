@@ -5,7 +5,7 @@
 # @File    : detect_frame_loader.py
 # ====================================================
 import sys
-sys.path.insert(0, '/storage/jbxiao/workspace/ground_code/lib')
+sys.path.insert(0, '/path/to/your/workspace/ground_code/lib')
 from .util import *
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader

@@ -1,7 +1,7 @@
 import os.path as osp
 from evaluations.common import tiou
 from evaluations.util import load_file
-import generate_track
+import generate_track_link
 
 def eval_ground_scores(gt_relations, pred_relations, tiou_threshold):
     """
@@ -23,7 +23,7 @@ def eval_ground_scores(gt_relations, pred_relations, tiou_threshold):
 
         gt_trajs = gt_relations[relation]
 
-        print(relation)
+        # print(relation)
 
         for gt_traj in gt_trajs:
             gt_sub = gt_traj['sub']
@@ -69,7 +69,7 @@ def evaluate(groundtruth, prediction, tiou_threshold=0.5):
         relation_pred = prediction[qid]
         if len(relation_pred) == 0:
             continue
-        print(qid)
+
         video_acc, video_acc_sub, video_acc_obj, relation_num = eval_ground_scores(relation_gt, relation_pred, tiou_threshold)
         # print('{} {:.6f} {:.6f} {:.6f}'.format(qid, video_acc_sub, video_acc_obj, video_acc))
 
@@ -94,10 +94,10 @@ def main():
     gt_file = osp.join(groundtruth_dir, 'gt_relation_frame.json')
 
     result_dir = 'results/'
-    res_file = osp.join(result_dir, 'ground_result_visual_bbox_trans_temp2_thd004.json')
+    res_file = osp.join(result_dir, 'test_viterbi_1gap.json')
     if not osp.exists(res_file):
         print('Generating ...')
-        generate_track.main(res_file)
+        generate_track_link.main(res_file)
 
     grountruth = load_file(gt_file)
     prediction = load_file(res_file)

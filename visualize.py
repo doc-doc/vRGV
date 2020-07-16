@@ -228,12 +228,12 @@ def vis_video_relation(video_name, anno_file, query, save=False):
 
 def main():
 
-    root_dir = '../vdata/'
+    root_dir = '../ground_data/vidvrd/'
     video_dir = root_dir + 'JPEGImages/'
     # 000960000, 00119046, 00272006, 00125015, 00223001, 00091004, 00190000, 00142000, 00177011, 00416000
     video_name = video_dir + 'ILSVRC2015_train_00010001' # 'ILSVRC2015_train_00071007' #ILSVRC2015_train_00010001' #'ILSVRC2015_train_00225000'
 
-    anno_file_pred = 'results/ground_result_visual_bbox_trans_temp2_thd004.json'
+    anno_file_pred = 'results/test_viterbi_1gap_04.json'
 
     #query = ('bicycle', 'move_beneath', 'person')
     query = ('person', 'ride', 'bicycle')

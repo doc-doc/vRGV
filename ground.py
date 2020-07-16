@@ -7,9 +7,9 @@
 from ground_relation import *
 import dataloader
 from dataloader.build_vocab import Vocabulary
-from tools.util import set_gpu_devices
 import os.path as osp
 import pickle as pkl
+from argparse import ArgumentParser
 
 
 batch_size = 32
@@ -21,10 +21,10 @@ nframes, nbbox = 120, 40
 
 vis_step = 30
 save_step = 10000
-visual_dim = 2048+5
+visual_dim = 2048+5 #visual appearance+bbox
 
 dataset = 'vidvrd/'
-root_dir = '/storage/jbxiao/workspace/'
+root_dir = '/storage/jbxiao/workspace/' #this directory includes two folders: ground_data and vRGV
 video_feature_path = osp.join(root_dir, 'ground_data/{}/frame_feature/'.format(dataset))
 video_feature_cache = osp.join(root_dir, 'ground_data/{}/video_feature'.format(dataset))
 
@@ -35,7 +35,7 @@ vocab_file = osp.join(sample_list_path, 'vocab.pkl')
 checkpoint_path = osp.join('models', dataset)
 model_prefix = 'visual_bbox_trans_temp2'
 
-def main():
+def main(args):
 
     with open(vocab_file, 'rb') as fp:
         vocab = pkl.load(fp)
@@ -43,17 +43,21 @@ def main():
     data_loader = dataloader.RelationLoader(batch_size, num_workers, video_feature_path, video_feature_cache,
                                             sample_list_path, vocab, nframes, nbbox, visual_dim, False, False)
 
-    train_loader, val_loader = data_loader.run(mode='train')
+    train_loader, val_loader = data_loader.run(mode=args.mode)
 
     ground_relation = GroundRelation(vocab, train_loader, val_loader, checkpoint_path, model_prefix, vis_step, save_step, visual_dim,
                                      lr, batch_size, epoch_num, cuda)
 
-    ground_relation.run(pretrain=False)
-    # ground_relation.predict(6)
-    # ground_relation.ground_attention(4)
+    mode = args.mode
+    if mode == 'train':
+        ground_relation.run(pretrain=False)
+    elif mode == 'val':
+        #return relation-aware spatio-temporal attention for dynamicly linking object proposals into trajectories
+        ground_relation.ground_attention(6)
     
 
 if __name__ == "__main__":
-
-    # set_gpu_devices(1)
-    main()
+    parser = ArgumentParser()
+    parser.add_argument('--mode', dest='mode', type=str, default='test', help='train or val')
+    args = parser.parse_args()
+    main(args)

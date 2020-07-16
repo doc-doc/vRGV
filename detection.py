@@ -10,10 +10,10 @@ from tools.util import set_gpu_devices
 
 BATCH_SIZE = 1
 num_workers = 1
-spatial_path = '../vdata/JPEGImages/'
 dataset = 'vidvrd/'
-train_list_path= 'dataset/'+dataset+'vrelation_train.json'
-val_list_path = 'dataset/'+dataset+'vrelation_val.json'
+spatial_path = '../ground_data/'+dataset+'/JPEGImages/'
+train_list_path= 'dataset/'+dataset+'/vrelation_train.json'
+val_list_path = 'dataset/'+dataset+'/vrelation_val.json'
 
 
 def main():
