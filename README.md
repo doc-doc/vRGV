@@ -1,7 +1,7 @@
 # Visual Relation Grounding in Videos
 
 This is the pytorch implementation of our paper at ECCV2020 (spotlight).
-![teaser](https://github.com/doc-doc/vRGV/teaser.jpg)
+![teaser](https://github.com/doc-doc/vRGV/blob/master/introduction.png)
 
 
 ## Environment
