@@ -110,11 +110,24 @@ class AttHierarchicalGround(nn.Module):
             word_embed = Variable(torch.from_numpy(np.asarray(self.word_dict[word],
                                                               dtype=np.float32))).squeeze().unsqueeze(0)
         else:
-            word_embed = Variable(torch.zeros(1, self.word_dim))
+            word_embed = Variable(torch.zeros(1, self.word_dim)) #will not go this branch
 
         word_embed = self.embedding_word(word_embed.cuda())
 
         return word_embed
+
+    # def phrase_embedding(self, phrase):
+    #     """
+    #     average the word embeddings as phrase representation
+    #     :param: phrase: eg, move_right
+    #     """
+    #     words = phrase.split('_')
+    #     word_embed = Variable(torch.zeros(1, self.word_dim))
+    #     for word in words:
+    #         word_embed += self.word_embedding(word)
+    #     phrase_embed = word_embed/len(words)
+    #
+    #     return  phrase_embed
 
 
     def attend_semantics(self, video_embed, word):
@@ -163,6 +176,8 @@ class AttHierarchicalGround(nn.Module):
             subject, object = split_relation[0], split_relation[2]
             subject_embed = self.word_embedding(subject)
             object_embed = self.word_embedding(object)
+            # predicate_embed = self.phrase_embedding(split_relation[1])
+            # sub_pred_obj = torch.cat([subject_embed, predicate_embed, object_embed], dim=1).unsqueeze(0)
             sub_obj = torch.cat([subject_embed, object_embed], dim=1).unsqueeze(0)
 
             subject_feat, sub_att = self.attend_semantics(video_embed, subject_embed)
