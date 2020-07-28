@@ -14,7 +14,8 @@ Please create an envs for this project using anaconda3 (should install [anaconda
 ```
 >conda create -n envname python=3.6.5 #create
 >conda activate envname #enter
->pip install -r requirements.txt #blindly install the provided libs 
+>pip install -r requirements.txt #blindly install the provided libs
+>sh vRGV/lib/make.sh #install the needed libs for detection
 ```
 ## Data Preparation
 Please download the data [here](https://drive.google.com/file/d/1__asF5lrOj7091TyLQkkebiRYLbrqYBA/view?usp=sharing). The folder [ground_data] should be at the same directory as vRGV [this project]. Please merge the downloaded vRGV folder with this repo. 
