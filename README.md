@@ -19,7 +19,7 @@ Please create an envs for this project using anaconda3 (should install [anaconda
 ## Data Preparation
 Please download the data [here](https://drive.google.com/file/d/1eHi5BTFxseXdEyDLFRLxFaHkO4xQYehp/view?usp=sharing). The folder [ground_data] should be at the same directory as vRGV [this project]. Please merge the downloaded vRGV folder with this repo. 
 
-Please download the raw videos [here](https://xdshang.github.io/docs/imagenet-vidvrd.html), and extract them into ground_data/vidvrd/JPEGImages/
+Please download the raw videos [here](https://xdshang.github.io/docs/imagenet-vidvrd.html), and extract them into ground_data/vidvrd/JPEGImages/. The directory should be like: JPEGImages/ILSVRC2015_train_xxx/000000.JPEG
 
 ## Usage
 Feature Extraction (need about 100G storage!)
