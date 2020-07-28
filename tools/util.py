@@ -1,5 +1,4 @@
 # ====================================================
-# @Time    : 11/7/19 7:11 PM
 # @Author  : Xiao Junbin
 # @Email   : junbin@comp.nus.edu.sg
 # @File    : util.py

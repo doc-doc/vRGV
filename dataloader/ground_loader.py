@@ -1,5 +1,4 @@
 # ====================================================
-# @Time    : 11/14/19 10:42 PM
 # @Author  : Xiao Junbin
 # @Email   : junbin@comp.nus.edu.sg
 # @File    : ground_loader.py

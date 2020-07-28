@@ -1,5 +1,4 @@
 # ====================================================
-# @Time    : 11/14/19 3:24 PM
 # @Author  : Xiao Junbin
 # @Email   : junbin@comp.nus.edu.sg
 # @File    : data_preparation.py

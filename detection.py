@@ -1,5 +1,4 @@
 # ====================================================
-# @Time    : 11/9/19 7:41 PM
 # @Author  : Xiao Junbin
 # @Email   : junbin@comp.nus.edu.sg
 # @File    : detection.py

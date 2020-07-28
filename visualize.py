@@ -1,5 +1,4 @@
 # ====================================================
-# @Time    : 10/3/19 2:55 PM
 # @Author  : Xiao Junbin
 # @Email   : junbin@comp.nus.edu.sg
 # @File    : visualize.py

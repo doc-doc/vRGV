@@ -1,5 +1,4 @@
 # ====================================================
-# @Time    : 11/15/19 3:06 PM
 # @Author  : Xiao Junbin
 # @Email   : junbin@comp.nus.edu.sg
 # @File    : relation2relation.py

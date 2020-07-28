@@ -1,5 +1,4 @@
 # ====================================================
-# @Time    : 11/15/19 1:30 PM
 # @Author  : Xiao Junbin
 # @Email   : junbin@comp.nus.edu.sg
 # @File    : ground_relation.py

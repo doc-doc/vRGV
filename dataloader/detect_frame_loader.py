@@ -1,5 +1,4 @@
 # ====================================================
-# @Time    : 11/9/19 2:45 PM
 # @Author  : Xiao Junbin
 # @Email   : junbin@comp.nus.edu.sg
 # @File    : detect_frame_loader.py

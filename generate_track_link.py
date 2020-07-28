@@ -1,5 +1,4 @@
 # ====================================================
-# @Time    : 12/21/19 10:33 PM
 # @Author  : Xiao Junbin
 # @Email   : junbin@comp.nus.edu.sg
 # @File    : generate_track.py

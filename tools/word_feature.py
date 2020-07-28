@@ -1,5 +1,4 @@
 # ====================================================
-# @Time    : 11/15/19 10:42 PM
 # @Author  : Xiao Junbin
 # @Email   : junbin@comp.nus.edu.sg
 # @File    : word_feature.py

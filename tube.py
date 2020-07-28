@@ -1,5 +1,4 @@
 # ====================================================
-# @Time    : 26/2/20 10:47 AM
 # @Author  : Xiao Junbin
 # @Email   : junbin@comp.nus.edu.sg
 # @File    : tube.py
