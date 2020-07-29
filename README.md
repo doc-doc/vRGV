@@ -40,7 +40,7 @@ Inference
 ## Visualization
 |Query Relations| bicycle-jump_beneath-person       | person-feed-elephant          | person-stand_above-car       | dog-watch-turtle|
 |:---| --------------------------------- | ----------------------------- | ---------------------------------------- | ---------------------------------------- | 
-|Results| ![](https://media.giphy.com/media/McClrVk9lCvVYSWvSg/giphy.gif) | ![](https://media.giphy.com/media/dX34r2BJNjVCNCuFNy/giphy.gif)   | ![](https://media.giphy.com/media/gGwGgGWRD7CSINbmio/giphy.gif)|![](https://media.giphy.com/media/fq8Diltl2xIucqq8EK/giphy.gif)|
+|Results| ![](https://media.giphy.com/media/McClrVk9lCvVYSWvSg/giphy.gif) | ![](https://media.giphy.com/media/dX34r2BJNjVCNCuFNy/giphy.gif)   | ![](https://media.giphy.com/media/gGwGgGWRD7CSINbmio/giphy.gif)|![](https://media.giphy.com/media/h5uiVR9ukJLVRgT9yC/giphy.gif)|
 
 
 ## Note  
