@@ -42,7 +42,7 @@ Inference
 | --------------------------------- | ----------------------------- | ---------------------------------------- | 
 | ![img](http://i.imgur.com/roeFXMRh.gif) | ![img](http://i.imgur.com/roeFXMRh.gif)   | ![img](http://i.imgur.com/roeFXMRh.gif)|
 | dog-watch-turtle                  | person-stand_above-bicycle              | bicycle-move_beneath-person                          |
-| ![img](http://i.imgur.com/roeFXMRh.gif) | ![img](http://i.imgur.com/roeFXMRh.gif)   | ![img](http://i.imgur.com/roeFXMRh.gif)|
+| ![Imgur](https://i.imgur.com/gk3PZtn.mp4) | ![img](http://i.imgur.com/roeFXMRh.gif)   | ![img](http://i.imgur.com/roeFXMRh.gif)|
 
 ## Note  
 
