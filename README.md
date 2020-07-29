@@ -38,9 +38,9 @@ Inference
 >python eval_ground.py # To evaluate the performance
 ```
 ## Visualization
-| bicycle-jump_beneath_person       | person-feed-elephant          | bicycle-move_toward-car                  |
-| --------------------------------- | ----------------------------- | ---------------------------------------- | 
-| ![](https://s31.aconvert.com/convert/p3r68-cdx67/rhj2e-12tyc.gif) | ![](https://s31.aconvert.com/convert/p3r68-cdx67/rhj2e-12tyc.gif)   | ![](https://s31.aconvert.com/convert/p3r68-cdx67/rhj2e-12tyc.gif)|
+|Query Relations| bicycle-jump_beneath-person       | person-feed-elephant          | bicycle-move_toward-car       | dog-watch-turtle|
+|:---| --------------------------------- | ----------------------------- | ---------------------------------------- | ---------------------------------------- | 
+|Results| ![](https://s17.aconvert.com/convert/p3r68-cdx67/lyfcr-6gqw6.gif) | ![](https://s31.aconvert.com/convert/p3r68-cdx67/j6rgm-hccgs.gif)   | ![](https://s31.aconvert.com/convert/p3r68-cdx67/ndoa3-vynzm.gif)|<img src="https://media.giphy.com/media/kF0GcaueP1ZFYlG5TM/giphy.gif" width="40" height="40" />|
 
 
 ## Note  
