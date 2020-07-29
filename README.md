@@ -40,9 +40,9 @@ Inference
 ## Visualization
 | bicycle-jump_beneath_person       | person-feed-elephant          | bicycle-move_toward-car                  |
 | --------------------------------- | ----------------------------- | ---------------------------------------- | 
-| ![img](http://i.imgur.com/roeFXMRh.gif) | ![img](http://i.imgur.com/roeFXMRh.gif)   | ![img](http://i.imgur.com/roeFXMRh.gif)|
+| ![](https://media.giphy.com/media/kF0GcaueP1ZFYlG5TM/giphy.gif) | ![img](http://i.imgur.com/roeFXMRh.gif)   | ![img](http://i.imgur.com/roeFXMRh.gif)|
 | dog-watch-turtle                  | person-stand_above-bicycle              | bicycle-move_beneath-person                          |
-| ![Imgur](https://i.imgur.com/gk3PZtn.mp4) | ![img](http://i.imgur.com/roeFXMRh.gif)   | ![img](http://i.imgur.com/roeFXMRh.gif)|
+| ![](https://s31.aconvert.com/convert/p3r68-cdx67/rhj2e-12tyc.gif) | ![img](http://i.imgur.com/roeFXMRh.gif)   | ![img](http://i.imgur.com/roeFXMRh.gif)|
 
 ## Note  
 
