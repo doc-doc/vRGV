@@ -40,11 +40,10 @@ Inference
 ## Visualization
 |Query Relations| bicycle-jump_beneath-person       | person-feed-elephant          | bicycle-move_toward-car       | dog-watch-turtle|
 |:---| --------------------------------- | ----------------------------- | ---------------------------------------- | ---------------------------------------- | 
-|Results| ![](https://s17.aconvert.com/convert/p3r68-cdx67/lyfcr-6gqw6.gif) | ![](https://s31.aconvert.com/convert/p3r68-cdx67/j6rgm-hccgs.gif)   | ![](https://s31.aconvert.com/convert/p3r68-cdx67/ndoa3-vynzm.gif)|<img src="https://media.giphy.com/media/kF0GcaueP1ZFYlG5TM/giphy.gif" width="40" height="40" />|
+|Results| ![](https://media3.giphy.com/media/aUovxH8Vf9qDu/giphy.gif) | ![](https://media3.giphy.com/media/aUovxH8Vf9qDu/giphy.gif)   | ![](https://media3.giphy.com/media/aUovxH8Vf9qDu/giphy.gif)|![](https://media3.giphy.com/media/aUovxH8Vf9qDu/giphy.gif)|
 
 
 ## Note  
-
 If you find the codes useful in your research, please kindly cite:
 
 ```
