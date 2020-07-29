@@ -41,7 +41,7 @@ Inference
 |Query| bicycle-jump_beneath-person       | person-feed-elephant          | person-stand_above-car       | dog-watch-turtle|
 |:---| --------------------------------- | ----------------------------- | ---------------------------------------- | ---------------------------------------- | 
 |Result| ![](https://media.giphy.com/media/htciIcJZ2q7pb06zoI/giphy.gif) | ![](https://media.giphy.com/media/dX34r2BJNjVCNCuFNy/giphy.gif)   | ![](https://media.giphy.com/media/ln7xmvrkjcX47W9Kax/giphy.gif)|![](https://media.giphy.com/media/h5uiVR9ukJLVRgT9yC/giphy.gif)|
-|Query| person-ride-horse       | person-ride-bicycle          | bicycle-move_toward-car       | bicycle-move_beneath-person|
+|Query| person-ride-horse       | person-ride-bicycle          | bicycle-move_toward-car       | person-drive-car|
 |Result| ![](https://media.giphy.com/media/J5jSa7lJxwFXorWYbx/giphy.gif) | ![](https://media.giphy.com/media/lSsztYWamp6gLfHSfg/giphy.gif)   | ![](https://media.giphy.com/media/ZE4vFIjfm1BHXP7w0R/giphy.gif)|![](https://media.giphy.com/media/S5Kp8KaApxrazkVmcd/giphy.gif)|
 
 ## Note  
