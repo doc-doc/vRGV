@@ -37,10 +37,13 @@ Inference
 >python generate_track_lick.py # To generate relation-aware trajectories with Viterbi algorithm
 >python eval_ground.py # To evaluate the performance
 ```
-Visualization
-```
->python visualize.py
-```
+## Visualization
+| bicycle-jump_beneath_person       | person-feed-elephant          | bicycle-move_toward-car                  |
+| --------------------------------- | ----------------------------- | ---------------------------------------- | 
+| ![img](http://i.imgur.com/roeFXMRh.gif) | ![img](http://i.imgur.com/roeFXMRh.gif)   | ![img](http://i.imgur.com/roeFXMRh.gif)|
+| dog-watch-turtle                  | person-stand_above-bicycle              | bicycle-move_beneath-person                          |
+| ![img](http://i.imgur.com/roeFXMRh.gif) | ![img](http://i.imgur.com/roeFXMRh.gif)   | ![img](http://i.imgur.com/roeFXMRh.gif)|
+
 ## Note  
 
 If you find the codes useful in your research, please kindly cite:
