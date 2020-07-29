@@ -38,7 +38,7 @@ Inference
 >python eval_ground.py # To evaluate the performance
 ```
 ## Visualization
-|Query| bicycle-jump_beneath-person       | person-feed-elephant          | person-stand_above-car       | dog-watch-turtle|
+|Query| bicycle-jump_beneath-person       | person-feed-elephant          | person-stand_above-bicycle       | dog-watch-turtle|
 |:---| --------------------------------- | ----------------------------- | ---------------------------------------- | ---------------------------------------- | 
 |Result| ![](https://media.giphy.com/media/htciIcJZ2q7pb06zoI/giphy.gif) | ![](https://media.giphy.com/media/dX34r2BJNjVCNCuFNy/giphy.gif)   | ![](https://media.giphy.com/media/ln7xmvrkjcX47W9Kax/giphy.gif)|![](https://media.giphy.com/media/h5uiVR9ukJLVRgT9yC/giphy.gif)|
 |Query| person-ride-horse       | person-ride-bicycle          |   person-drive-car     |  bicycle-move_toward-car|
