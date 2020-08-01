@@ -12,10 +12,10 @@ Anaconda 3, python 3.6.5, pytorch 0.4.1 and cuda >= 9.0. For others libs, please
 ## Install
 Please create an envs for this project using anaconda3 (should install [anaconda](https://docs.anaconda.com/anaconda/install/linux/) first)
 ```
->conda create -n envname python=3.6.5 #create
->conda activate envname #enter
->pip install -r requirements.txt #blindly install the provided libs
->sh vRGV/lib/make.sh #install the needed libs for detection
+>conda create -n envname python=3.6.5 # Create
+>conda activate envname # Enter
+>pip install -r requirements.txt # Install the provided libs
+>sh vRGV/lib/make.sh # Set the environment for detection
 ```
 ## Data Preparation
 Please download the data [here](https://drive.google.com/file/d/1qNJ3jBPPoi0BPkvLqooS66czvCxsib1M/view?usp=sharing). The folder [ground_data] should be at the same directory as vRGV [this project]. Please merge the downloaded vRGV folder with this repo. 
@@ -29,13 +29,13 @@ Feature Extraction (need about 100G storage!)
 ```
 Train
 ```
->./ground.sh 0 --mode train # To train the model with GPU id 0
+>./ground.sh 0 train # Train the model with GPU id 0
 ```
 Inference
 ```
->./ground.sh 0 --mode val # To output the relation-aware spatio-temporal attention
->python generate_track_lick.py # To generate relation-aware trajectories with Viterbi algorithm
->python eval_ground.py # To evaluate the performance
+>./ground.sh 0 val # Output the relation-aware spatio-temporal attention
+>python generate_track_lick.py # Generate relation-aware trajectories with Viterbi algorithm
+>python eval_ground.py # Evaluate the performance
 ```
 ## Visualization
 |Query| bicycle-jump_beneath-person       | person-feed-elephant          | person-stand_above-bicycle       | dog-watch-turtle|
