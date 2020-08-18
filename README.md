@@ -23,7 +23,7 @@ Please download the data [here](https://drive.google.com/file/d/1qNJ3jBPPoi0BPkv
 Please download the raw videos [here](https://xdshang.github.io/docs/imagenet-vidvrd.html), and extract them into ground_data/vidvrd/JPEGImages/. The directory should be like: JPEGImages/ILSVRC2015_train_xxx/000000.JPEG
 
 ## Usage
-Feature Extraction (need about 100G storage! Because I dumped all the detected bboxes along with their features. It can be greatly reduced by changing detect_frame.py and returning the top-40 bboxes of high confidence scores.)
+Feature Extraction (need about 100G storage! Because I dumped all the detected bboxes along with their features. It can be greatly reduced by changing detect_frame.py and returning the top-40 bboxes and save with h5py file.)
 ```
 >./detection.sh
 ```
