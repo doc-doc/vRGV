@@ -48,7 +48,7 @@ Inference
 If you find the codes useful in your research, please kindly cite:
 
 ```
-@inproceedings{junbin2020visual,
+@inproceedings{xiao2020visual,
   title={Visual Relation Grounding in Videos},
   author={Junbin, Xiao and Xindi, Shang and Xun, Yang and Sheng, Tang and Tat-Seng, Chua},
   booktitle={Proceedings of the 16th European Conference on Computer Vision (ECCV)},
