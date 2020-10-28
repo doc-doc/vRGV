@@ -7,7 +7,7 @@ The repository mainly includes 3 parts: (1) Extract RoI feature; (2) Train and i
 
 ## Environment
 
-Anaconda 3, python 3.6.5, pytorch 0.4.1 (higher version is OK) and cuda >= 9.0. For others libs, please refer to the file requirements.txt.
+Anaconda 3, python 3.6.5, pytorch 0.4.1 (Higher version is OK once feature is ready) and cuda >= 9.0. For others libs, please refer to the file requirements.txt.
 
 ## Install
 Please create an envs for this project using anaconda3 (should install [anaconda](https://docs.anaconda.com/anaconda/install/linux/) first)
