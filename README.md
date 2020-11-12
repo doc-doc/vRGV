@@ -50,9 +50,11 @@ If you find the codes useful in your research, please kindly cite:
 ```
 @inproceedings{xiao2020visual,
   title={Visual Relation Grounding in Videos},
-  author={Junbin, Xiao and Xindi, Shang and Xun, Yang and Sheng, Tang and Tat-Seng, Chua},
-  booktitle={Proceedings of the 16th European Conference on Computer Vision (ECCV)},
-  year={2020}
+  author={Xiao, Junbin and Shang, Xindi and Yang, Xun and Tang, Sheng and Chua, Tat-Seng},
+  booktitle={European Conference on Computer Vision},
+  pages={447--464},
+  year={2020},
+  organization={Springer}
 }
 ```
 
