@@ -11,7 +11,7 @@ import pickle as pkl
 from argparse import ArgumentParser
 
 
-batch_size = 32
+batch_size = 32 #change to 1 for val, will support batch_size>1 for inference later
 lr = 1e-4
 num_workers = 10
 epoch_num = 20
@@ -23,7 +23,7 @@ save_step = 10000
 visual_dim = 2048+5 #visual appearance+bbox
 
 dataset = 'vidvrd/'
-root_dir = '/storage/jbxiao/workspace/' #this directory includes two folders: ground_data and vRGV
+root_dir = '/path/to/your/workspace/' #this directory includes two folders: ground_data and vRGV
 video_feature_path = osp.join(root_dir, 'ground_data/{}/frame_feature/'.format(dataset))
 video_feature_cache = osp.join(root_dir, 'ground_data/{}/video_feature'.format(dataset))
 
@@ -40,7 +40,7 @@ def main(args):
         vocab = pkl.load(fp)
 
     data_loader = dataloader.RelationLoader(batch_size, num_workers, video_feature_path, video_feature_cache,
-                                            sample_list_path, vocab, nframes, nbbox, visual_dim, False, False)
+                                            sample_list_path, vocab, nframes, nbbox, visual_dim, True, False)
 
     train_loader, val_loader = data_loader.run(mode=args.mode)
 
@@ -57,6 +57,6 @@ def main(args):
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument('--mode', dest='mode', type=str, default='test', help='train or val')
+    parser.add_argument('--mode', dest='mode', type=str, default='train', help='train or val')
     args = parser.parse_args()
     main(args)

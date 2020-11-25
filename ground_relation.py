@@ -264,7 +264,7 @@ class GroundRelation():
             if (vname != pre_vname and iter > 0) or (iter == total-1):
                 if iter == total-1:
                     video[relation_text[0]] = data
-                save_name = '../ground_data/results/vidvrd_new/'+pre_vname+'.json'
+                save_name = '../ground_data/results/vidvrd/'+pre_vname+'.json'
                 save_results(save_name, video)
                 video = {}
 

@@ -44,13 +44,13 @@ def get_video_frames(video_relation_file):
             continue
 
     all_frames = []
-    sample_num = 512
+    sample_num = 120
 
     for video, nframe in vframes.items():
         # if video == '1052/5441845281':
         #     print(video, nframe)
         samples = np.round(np.linspace(
-            1, nframe, sample_num))
+            0, nframe-1, sample_num))
 
         samples = set([int(s) for s in samples])
         samples = list(samples)

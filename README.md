@@ -34,7 +34,7 @@ Train
 Inference
 ```
 >./ground.sh 0 val # Output the relation-aware spatio-temporal attention
->python generate_track_lick.py # Generate relation-aware trajectories with Viterbi algorithm
+>python generate_track_link.py # Generate relation-aware trajectories with Viterbi algorithm
 >python eval_ground.py # Evaluate the performance
 ```
 ## Visualization
