@@ -27,7 +27,7 @@ Feature Extraction (need about 100G storage! Because I dumped all the detected b
 ```
 >./detection.sh
 ```
-Train
+Training
 ```
 >./ground.sh 0 train # Train the model with GPU id 0
 ```
