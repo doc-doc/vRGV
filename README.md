@@ -1,6 +1,6 @@
 # Visual Relation Grounding in Videos
 
-This is the pytorch implementation of our paper at ECCV2020 (Spotlight). 
+This is the pytorch implementation of our work at ECCV2020 (Spotlight). 
 ![teaser](https://github.com/doc-doc/vRGV/blob/master/introduction.png)
 The repository mainly includes 3 parts: (1) Extract RoI feature; (2) Train and inference; and (3) Generate relation-aware trajectories.
 ![](https://github.com/doc-doc/vRGV/blob/master/model.png)
