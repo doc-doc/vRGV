@@ -23,7 +23,7 @@ save_step = 10000
 visual_dim = 2048+5 #visual appearance+bbox
 
 dataset = 'vidvrd/'
-root_dir = '/storage/jbxiao/workspace/test_vRGV/' #this directory includes two folders: ground_data and vRGV
+root_dir = '/path/to/workspace/' #this directory includes two folders: ground_data and vRGV
 video_feature_path = osp.join(root_dir, 'ground_data/{}/frame_feature/'.format(dataset))
 video_feature_cache = osp.join(root_dir, 'ground_data/{}/video_feature'.format(dataset))
 

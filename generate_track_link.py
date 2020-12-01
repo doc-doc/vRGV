@@ -162,7 +162,7 @@ def main(res_file):
     data_dir = '../ground_data/'
     dataset = 'vidvrd'
     val_list_file = 'dataset/{}/vrelation_val.json'.format(dataset)
-    result_file = '../{}/results/{}_batch.json'.format(data_dir, dataset)
+    result_file = '{}/results/{}_batch.json'.format(data_dir, dataset)
 
     feat_dir = osp.join(data_dir, dataset, 'frame_feature')
     bbox_dir = osp.join(data_dir, dataset, 'bbox')
