@@ -11,7 +11,7 @@ import pickle as pkl
 from argparse import ArgumentParser
 
 
-batch_size = 32 #change to 1 for val
+batch_size = 32
 lr = 1e-4
 num_workers = 10
 epoch_num = 20
