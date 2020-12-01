@@ -71,7 +71,6 @@ def evaluate(groundtruth, prediction, tiou_threshold=0.5):
             continue
 
         video_acc, video_acc_sub, video_acc_obj, relation_num = eval_ground_scores(relation_gt, relation_pred, tiou_threshold)
-        # print('{} {:.6f} {:.6f} {:.6f}'.format(qid, video_acc_sub, video_acc_obj, video_acc))
 
         acc += video_acc
         acc_sub += video_acc_sub
@@ -83,9 +82,9 @@ def evaluate(groundtruth, prediction, tiou_threshold=0.5):
     acc_sub /= video_num
     acc_obj /= video_num
 
-    print("Subject\t Object\t All")
+    print("Acc_S\t Acc_O\t Acc_R")
 
-    print('{:.6f}\t {:.6f}\t {:.6f}'.format(acc_sub, acc_obj, acc))
+    print('{:.2f}\t {:.2f}\t {:.2f}'.format(acc_sub*100, acc_obj*100, acc*100))
 
 
 def main():
@@ -94,7 +93,7 @@ def main():
     gt_file = osp.join(groundtruth_dir, 'gt_relation_frame.json')
 
     result_dir = 'results/'
-    res_file = osp.join(result_dir, 'test_viterbi_1gap.json')
+    res_file = osp.join(result_dir, 'test_viterbi_1gap_04_batch.json')
     if not osp.exists(res_file):
         print('Generating ...')
         generate_track_link.main(res_file)
@@ -107,6 +106,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
 

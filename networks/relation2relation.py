@@ -192,6 +192,10 @@ class AttHierarchicalGround(nn.Module):
             # final_object_feat = object_feat
 
             cb_feat = torch.cat((final_subject_feat, final_object_feat), dim=1).unsqueeze(0)
+
+            sub_att, obj_att = sub_att.unsqueeze(0), obj_att.unsqueeze(0)
+
+
             if bs == 0:
                 frame_feat = cb_feat
                 relation_feat = sub_obj
@@ -238,7 +242,7 @@ class AttHierarchicalGround(nn.Module):
 
         frame_count = videos.shape[1]
 
-        max_seg_num = frame_count / self.max_seg_len
+        max_seg_num = int(frame_count / self.max_seg_len)
 
         #SAU & MSG
         ori_x, ori_relation_feat, sub_atts, obj_atts = self.spatialAtt(videos, relation_text)
@@ -248,9 +252,9 @@ class AttHierarchicalGround(nn.Module):
         within_seg_rnn_out, _ = self.within_seg_rnn(x_trans)
         self.within_seg_rnn.flatten_parameters()
 
-        idx = np.round(np.linspace(self.max_seg_len-1, frame_count-1, max_seg_num))
+        idx = np.round(np.linspace(self.max_seg_len-1, frame_count-1, max_seg_num)).astype('int')
 
-        idx = [int(id) for id in idx]
+        #idx = [int(id) for id in idx]
 
         seg_rnn_input = within_seg_rnn_out[:,idx,:]
 

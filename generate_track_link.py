@@ -10,7 +10,6 @@ import pickle as pkl
 from utils import save_results, sort_bbox, pkload, pkdump
 from tube import *
 import time
-from visualize import vis_prediction_online
 
 sample_fnum = 120
 beta_thresh = 0.04
@@ -79,7 +78,7 @@ def interpolate(sub_bboxes, obj_bboxes, valid_frame_idx, sample_frames, nframe):
     return full_sub_bboxes, full_obj_bboxes
 
 
-def generate_track(val_list_file, results_dir, feat_dir, bbox_dir, res_file):
+def generate_track(val_list_file, results_file, feat_dir, bbox_dir, res_file):
     """
     generate tracklet from attention value
     :param val_list_file:
@@ -91,6 +90,7 @@ def generate_track(val_list_file, results_dir, feat_dir, bbox_dir, res_file):
     pre_vname = ''
     results, video_bboxes = None, None
     sample_frames = None
+    results_all = load_file(results_file)
 
     final_res = {}
     video_res = {}
@@ -110,7 +110,7 @@ def generate_track(val_list_file, results_dir, feat_dir, bbox_dir, res_file):
             else:
                 video_bboxes, sample_frames = load_video_bbox(vname, feat_dir, nframe)
                 pkdump((video_bboxes, sample_frames), cache_file)
-            results = load_file(osp.join(results_dir, vname + '.json'))
+            results = results_all[vname]
             if i > 0:
                 final_res[pre_vname] = video_res
             video_res = {}
@@ -118,8 +118,11 @@ def generate_track(val_list_file, results_dir, feat_dir, bbox_dir, res_file):
 
         alpha_s = np.array(results[relation]['sub'])
         alpha_o = np.array(results[relation]['obj'])
-        beta1 = results[relation]['beta1'][0] #(1, sample_fnum)
-        beta2 = results[relation]['beta2'][0]
+
+        beta1 = results[relation]['beta1']
+        beta2 = results[relation]['beta2']
+
+        # print(alpha_o.shape, beta1.shape)
 
         nsample, nclip = len(beta1), len(beta2)
         beta1 = np.asarray(beta1)
@@ -159,13 +162,13 @@ def main(res_file):
     data_dir = '../ground_data/'
     dataset = 'vidvrd'
     val_list_file = 'dataset/{}/vrelation_val.json'.format(dataset)
-    result_dir = '{}/results/{}'.format(data_dir, dataset)
+    result_file = '../{}/results/{}_batch.json'.format(data_dir, dataset)
 
     feat_dir = osp.join(data_dir, dataset, 'frame_feature')
     bbox_dir = osp.join(data_dir, dataset, 'bbox')
-    generate_track(val_list_file, result_dir, feat_dir, bbox_dir, res_file)
+    generate_track(val_list_file, result_file, feat_dir, bbox_dir, res_file)
 
 
 if __name__ == "__main__":
-    res_file = 'results/test_viterbi_1gap_04.json'
+    res_file = 'results/test_viterbi_1gap_04_batch.json'
     main(res_file)

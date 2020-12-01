@@ -160,23 +160,24 @@ class GroundRelation():
         total_step = len(self.val_loader)
         epoch_loss = 0
 
-        for iter, (relation_text, videos, relations, valid_lengths, video_names) in enumerate(self.val_loader):
-            videos = videos.to(self.device)
-            relations = relations.to(self.device)
-            targets = pack_padded_sequence(relations, valid_lengths, batch_first=True)[0]
+        with torch.no_grad():
+            for iter, (relation_text, videos, relations, valid_lengths, video_names) in enumerate(self.val_loader):
+                videos = videos.to(self.device)
+                relations = relations.to(self.device)
+                targets = pack_padded_sequence(relations, valid_lengths, batch_first=True)[0]
 
-            video_out, video_hidden = self.relation_ground(videos, relation_text)
-            relation_decode = self.relation_reconstruction(video_out, video_hidden, relations, valid_lengths)
+                video_out, video_hidden = self.relation_ground(videos, relation_text)
+                relation_decode = self.relation_reconstruction(video_out, video_hidden, relations, valid_lengths)
 
-            loss = self.criterion(relation_decode, targets)
+                loss = self.criterion(relation_decode, targets)
 
-            cur_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-            if iter % self.vis_step == 0:
-                print('    [{}/{}]-{}-{:.4f}-{:5.4f}'.
-                      format(iter, total_step, cur_time,  loss.item(), np.exp(loss.item())))
+                cur_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                if iter % self.vis_step == 0:
+                    print('    [{}/{}]-{}-{:.4f}-{:5.4f}'.
+                          format(iter, total_step, cur_time,  loss.item(), np.exp(loss.item())))
 
 
-            epoch_loss += loss.item()
+                epoch_loss += loss.item()
 
         return epoch_loss / total_step
 
@@ -197,80 +198,73 @@ class GroundRelation():
         pos_num = 0
 
         fout = open('results/prediction.txt', 'w')
+        with torch.no_grad():
+            for iter, (relation_text, videos, relations, valid_lengths, video_names) in enumerate(self.val_loader):
 
-        for iter, (relation_text, videos, relations, valid_lengths, video_names) in enumerate(self.val_loader):
+                videos = videos.to(self.device)
 
-            videos = videos.to(self.device)
+                video_out, video_hidden = self.relation_ground(videos, relation_text)
 
-            video_out, video_hidden = self.relation_ground(videos, relation_text)
+                sample_ids = self.relation_reconstruction.sample(video_out, video_hidden)
 
-            sample_ids = self.relation_reconstruction.sample(video_out, video_hidden)
+                sample_ids = sample_ids[0].cpu().numpy()
 
-            sample_ids = sample_ids[0].cpu().numpy()
+                predict_relation = []
+                for id in sample_ids:
+                    word = self.vocab.idx2word[id]
+                    predict_relation.append(word)
+                    if word == '<end>': break
 
-            predict_relation = []
-            for id in sample_ids:
-                word = self.vocab.idx2word[id]
-                predict_relation.append(word)
-                if word == '<end>': break
+                predict_relation = ' '.join(predict_relation[1:-1])
+                # print(relation_text[0], predict_relation)
 
-            predict_relation = ' '.join(predict_relation[1:-1])
-            # print(relation_text[0], predict_relation)
+                table = str.maketrans('-_', '  ')
+                relation = relation_text[0].translate(table)
+                output_str = "{}:{}".format(relation, predict_relation)
+                fout.writelines(output_str+'\n')
 
-            table = str.maketrans('-_', '  ')
-            relation = relation_text[0].translate(table)
-            output_str = "{}:{}".format(relation, predict_relation)
-            fout.writelines(output_str+'\n')
+                if relation == predict_relation:
+                    pos_num += 1
 
-            if relation == predict_relation:
-                pos_num += 1
-
-            if iter%self.vis_step == 0:
-                print("{}:{}".format(iter, output_str))
+                if iter%self.vis_step == 0:
+                    print("{}:{}".format(iter, output_str))
 
         print("Reconstrution Rate: ", pos_num / total)
         fout.close()
 
 
-    def ground_attention(self, ep):
+    def ground_attention(self, ep, save_name):
         """output the spatial temporal attention as grounding results"""
         self.build_model()
         ground_model_path = osp.join(self.model_dir, '{}-ground-{}.ckpt'.format(self.model_name, ep))
         self.relation_ground.eval()
         self.relation_ground.load_state_dict(torch.load(ground_model_path))
-
+        video_res = {}
         total = len(self.val_loader)
+        with torch.no_grad():
+            for iter, (relation_text, videos, relations, valid_lengths, video_names) in enumerate(self.val_loader):
+                videos = videos.to(self.device)
+                sub_atts, obj_atts, beta1, beta2 = self.relation_ground(videos, relation_text, mode='val')
+                # print(sub_atts.shape, beta1.shape) #(32, 120, 40), (32, 120)
 
-        video = {}
-        pre_vname = ''
-        for iter, (relation_text, videos, relations, valid_lengths, video_names) in enumerate(self.val_loader):
+                data_sub_atts = sub_atts.data.cpu().numpy()
+                data_obj_atts = obj_atts.data.cpu().numpy()
+                data_beta2 = beta2.data.cpu().numpy()
+                data_beta1 = beta1.data.cpu().numpy()
+                real_bs = data_sub_atts.shape[0]
 
-            vname = video_names[0]
-            videos = videos.to(self.device)
-            sub_atts, obj_atts, beta1, beta2 = self.relation_ground(videos, relation_text, mode='val')
+                for bs in range(real_bs):
+                    data = {}
+                    data['sub'] = data_sub_atts[bs].tolist()
+                    data['obj'] = data_obj_atts[bs].tolist()
+                    data['beta2'] = data_beta2[bs].tolist()
+                    data['beta1'] = data_beta1[bs].tolist()
 
-            data_sub_atts = sub_atts.data.cpu().numpy()
-            data_obj_atts = obj_atts.data.cpu().numpy()
-            data_beta2 = beta2.data.cpu().numpy()
-            data_beta1 = beta1.data.cpu().numpy()
+                    vname = video_names[bs]
+                    if vname not in video_res: video_res[vname] = {}
+                    video_res[vname][relation_text[bs]] = data
 
-            data = {}
-            data['sub'] = data_sub_atts.tolist()
-            data['obj'] = data_obj_atts.tolist()
-            data['beta2'] = data_beta2.tolist()
-            data['beta1'] = data_beta1.tolist()
+                if iter % self.vis_step == 0:
+                    print('Finished: {}-{}'.format(iter, total))
 
-
-            if (vname != pre_vname and iter > 0) or (iter == total-1):
-                if iter == total-1:
-                    video[relation_text[0]] = data
-                save_name = '../ground_data/results/vidvrd/'+pre_vname+'.json'
-                save_results(save_name, video)
-                video = {}
-
-            video[relation_text[0]] = data
-
-            pre_vname = vname
-
-            if iter%self.vis_step == 0:
-                print("{}:{}".format(iter, vname))
+            save_results(save_name, video_res)

@@ -136,7 +136,7 @@ def tiou(pred_traj, gt_traj):
 
     tov = (t_op1 + t_op2 + t_op3) * 1.0 / (3 * total)
 
-    print('pred_traj: {}, gt_traj: {}, tiou: {:.6f}'.format(len(pred_traj), len(gt_traj), tov))
+    #print('pred_traj: {}, gt_traj: {}, tiou: {:.6f}'.format(len(pred_traj), len(gt_traj), tov))
 
     return tov
 

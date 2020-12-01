@@ -11,19 +11,19 @@ import pickle as pkl
 from argparse import ArgumentParser
 
 
-batch_size = 32 #change to 1 for val, will support batch_size>1 for inference later
+batch_size = 32 #change to 1 for val
 lr = 1e-4
 num_workers = 10
 epoch_num = 20
 cuda = True
 nframes, nbbox = 120, 40
 
-vis_step = 30
+vis_step = 100
 save_step = 10000
 visual_dim = 2048+5 #visual appearance+bbox
 
 dataset = 'vidvrd/'
-root_dir = '/path/to/your/workspace/' #this directory includes two folders: ground_data and vRGV
+root_dir = '/storage/jbxiao/workspace/test_vRGV/' #this directory includes two folders: ground_data and vRGV
 video_feature_path = osp.join(root_dir, 'ground_data/{}/frame_feature/'.format(dataset))
 video_feature_cache = osp.join(root_dir, 'ground_data/{}/video_feature'.format(dataset))
 
@@ -52,7 +52,8 @@ def main(args):
         ground_relation.run(pretrain=False)
     elif mode == 'val':
         #return relation-aware spatio-temporal attention for dynamicly linking object proposals into trajectories
-        ground_relation.ground_attention(6)
+        save_name = '../ground_data/results/vidvrd_batch.json'
+        ground_relation.ground_attention(6, save_name)
     
 
 if __name__ == "__main__":
