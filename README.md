@@ -20,7 +20,7 @@ Please create an envs for this project using anaconda3 (should install [anaconda
 ## Data Preparation
 Please download the data [here](https://drive.google.com/file/d/1qNJ3jBPPoi0BPkvLqooS66czvCxsib1M/view?usp=sharing). The folder [ground_data] should be at the same directory as vRGV [this project]. Please merge the downloaded vRGV folder with this repo. 
 
-Please download the extracted videos [here](https://drive.google.com/file/d/1HpgJ38GjW0mXXBjsEMReLvXhfYaehKqR/view?usp=sharing), and put them into ground_data
+Please download the extracted videos [here](https://drive.google.com/file/d/1HpgJ38GjW0mXXBjsEMReLvXhfYaehKqR/view?usp=sharing), and put them into ground_data. 
 The directory should be like: ground_data/vidvrd/JPEGImages/ILSVRC2015_train_xxx/000000.JPEG.
 
 ## Usage
