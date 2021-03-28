@@ -46,7 +46,7 @@ Inference
 |Result| ![](https://media.giphy.com/media/J5jSa7lJxwFXorWYbx/giphy.gif) | ![](https://media.giphy.com/media/lSsztYWamp6gLfHSfg/giphy.gif)   | ![](https://media.giphy.com/media/S5Kp8KaApxrazkVmcd/giphy.gif)|![](https://media.giphy.com/media/ZE4vFIjfm1BHXP7w0R/giphy.gif)|
 
 ## Note  
-If you find the code useful in your research, please kindly cite:
+If you use the code in your research, please kindly cite:
 
 ```
 @inproceedings{xiao2020visual,
