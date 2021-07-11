@@ -10,7 +10,7 @@ The repository mainly includes 3 parts: (1) Extract RoI feature; (2) Train and i
 Anaconda 3, python 3.6.5, pytorch 0.4.1 (Higher version is OK once feature is ready) and cuda >= 9.0. For others libs, please refer to the file requirements.txt.
 
 ## Install
-Please create an envs for this project using anaconda3 (should install [anaconda](https://docs.anaconda.com/anaconda/install/linux/) first)
+Please create an env for this project using anaconda3 (should install [anaconda](https://docs.anaconda.com/anaconda/install/linux/) first)
 ```
 >conda create -n envname python=3.6.5 # Create
 >conda activate envname # Enter
@@ -45,8 +45,7 @@ Inference
 |Query| person-ride-horse       | person-ride-bicycle          |   person-drive-car     |  bicycle-move_toward-car|
 |Result| ![](https://media.giphy.com/media/J5jSa7lJxwFXorWYbx/giphy.gif) | ![](https://media.giphy.com/media/lSsztYWamp6gLfHSfg/giphy.gif)   | ![](https://media.giphy.com/media/S5Kp8KaApxrazkVmcd/giphy.gif)|![](https://media.giphy.com/media/ZE4vFIjfm1BHXP7w0R/giphy.gif)|
 
-## Note  
-If you use the code in your research, please kindly cite:
+## Citation
 
 ```
 @inproceedings{xiao2020visual,
