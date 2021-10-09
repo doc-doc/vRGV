@@ -21,7 +21,6 @@ class AttHierarchicalGround(nn.Module):
         self.hidden_size = hidden_size
         self.embed_dim = hidden_size // 2
 
-
         self.num_layers = num_layers
         self.word_dim = word_dim
 
@@ -29,7 +28,7 @@ class AttHierarchicalGround(nn.Module):
         dropout = 0.2
 
         self.word_dict = None
-        with open('/storage/jbxiao/workspace/ground_data/glove/vidvrd_word_glove.pkl', 'rb') as fp:
+        with open('/path/to/workspace/ground_data/glove/vidvrd_word_glove.pkl', 'rb') as fp:
             self.word_dict = pkl.load(fp)
 
         self.embedding_word = nn.Sequential(nn.Linear(word_dim, self.embed_dim),
@@ -42,14 +41,16 @@ class AttHierarchicalGround(nn.Module):
 
         self.embedding_location = nn.Sequential(nn.Linear(5, self.embed_dim),
                                               nn.ReLU(),
-                                              nn.Dropout(dropout))
-
+                                              nn.Dropout(dropout))                           
+        
         self.transform_spatt1 = nn.Linear(self.embed_dim*2, self.embed_dim)
         self.transform_spatt2 = nn.Linear(self.embed_dim, 1, bias=False)
+       
 
         self.transform_tempatt_bottom1 = nn.Linear(self.hidden_size*2, self.hidden_size)
         self.transform_tempatt_bottom2 = nn.Linear(self.hidden_size, 1, bias=False)
 
+       
         self.msg_sub2obj = nn.Sequential(nn.Linear(40, self.embed_dim),
                                        nn.ReLU(),
                                        nn.Dropout(dropout))
@@ -57,7 +58,8 @@ class AttHierarchicalGround(nn.Module):
         self.msg_obj2sub = nn.Sequential(nn.Linear(40, self.embed_dim),
                                        nn.ReLU(),
                                        nn.Dropout(dropout))
-
+       
+        
         # affine transformation for lstm hidden state
         self.linear1 = nn.Linear(hidden_size*2, hidden_size)
 
@@ -177,8 +179,10 @@ class AttHierarchicalGround(nn.Module):
             object_embed = self.word_embedding(object)
             # predicate_embed = self.phrase_embedding(split_relation[1])
             # sub_pred_obj = torch.cat([subject_embed, predicate_embed, object_embed], dim=1).unsqueeze(0)
+            
             sub_obj = torch.cat([subject_embed, object_embed], dim=1).unsqueeze(0)
-
+            #################for 2nd stage training#############################
+            
             subject_feat, sub_att = self.attend_semantics(video_embed, subject_embed)
             object_feat, obj_att = self.attend_semantics(video_embed, object_embed)
 
@@ -188,13 +192,9 @@ class AttHierarchicalGround(nn.Module):
             final_subject_feat = subject_feat + o2s_feat
             final_object_feat = object_feat + s2o_feat
 
-            # final_subject_feat = subject_feat
-            # final_object_feat = object_feat
-
             cb_feat = torch.cat((final_subject_feat, final_object_feat), dim=1).unsqueeze(0)
 
             sub_att, obj_att = sub_att.unsqueeze(0), obj_att.unsqueeze(0)
-
 
             if bs == 0:
                 frame_feat = cb_feat
@@ -206,10 +206,7 @@ class AttHierarchicalGround(nn.Module):
                 relation_feat = torch.cat([relation_feat, sub_obj], 0)
                 sub_satt_values = torch.cat([sub_satt_values, sub_att], 0)
                 obj_satt_values = torch.cat([obj_satt_values, obj_att], 0)
-
-
-        # print(frame_feat.shape) #(batch_size, nframe, feat_dim)
-        # print(relation_feat.shape)
+            
 
         return frame_feat, relation_feat, sub_satt_values, obj_satt_values
 
@@ -246,7 +243,8 @@ class AttHierarchicalGround(nn.Module):
 
         #SAU & MSG
         ori_x, ori_relation_feat, sub_atts, obj_atts = self.spatialAtt(videos, relation_text)
-
+        # print(ori_x.shape, ori_relation_feat.shape)
+        
         x_trans = self.transform_visual(ori_x)
 
         within_seg_rnn_out, _ = self.within_seg_rnn(x_trans)
@@ -254,12 +252,11 @@ class AttHierarchicalGround(nn.Module):
 
         idx = np.round(np.linspace(self.max_seg_len-1, frame_count-1, max_seg_num)).astype('int')
 
-        #idx = [int(id) for id in idx]
-
         seg_rnn_input = within_seg_rnn_out[:,idx,:]
 
         trans_relation_feat = self.transform_rel(ori_relation_feat)
         att_seg_rnn_input, beta2 = self.temporalAtt(seg_rnn_input, trans_relation_feat)
+        
 
         seg_out, hidden = self.seg_rnn(att_seg_rnn_input)
         self.seg_rnn.flatten_parameters()

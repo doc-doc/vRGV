@@ -114,7 +114,7 @@ def generate_track(val_list_file, results_file, feat_dir, bbox_dir, res_file):
             if i > 0:
                 final_res[pre_vname] = video_res
             video_res = {}
-            print(i, vname)
+            print('{}/{} {}'.format(i, total_n, vname))
 
         alpha_s = np.array(results[relation]['sub'])
         alpha_o = np.array(results[relation]['obj'])

@@ -8,39 +8,38 @@ import os
 import sys
 sys.path.insert(0, 'lib')
 import numpy as np
-import argparse
-import pprint
-import pdb
-import time
+# import argparse
+# import pprint
+# import pdb
+# import time
 import cv2
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
 import torch.optim as optim
-import matplotlib.pyplot as plt
-import torchvision
+# import matplotlib.pyplot as plt
+# import torchvision
 from collections import defaultdict
 import os.path as osp
 import pickle as pkl
 
-from roi_data_layer.roidb import combined_roidb
-from roi_data_layer.roibatchLoader import roibatchLoader
+# from roi_data_layer.roidb import combined_roidb
+# from roi_data_layer.roibatchLoader import roibatchLoader
 from model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
 from model.rpn.bbox_transform import clip_boxes
 from model.nms.nms_wrapper import nms
 from model.rpn.bbox_transform import bbox_transform_inv
-from model.utils.net_utils import save_net, load_net, vis_detections
-from model.utils.blob import im_list_to_blob
+# from model.utils.net_utils import save_net, load_net, vis_detections
+# from model.utils.blob import im_list_to_blob
 from model.faster_rcnn.resnet import resnet
 import pdb
-import threading
-
+# import threading
 
 
 
 class FeatureExtractor():
     def __init__(self, train_loader, val_loader, cfg_file, classes,
-                 class_agnostic, cuda, checkpoint_path):
+                 class_agnostic, cuda, checkpoint_path, save_dir):
         self.cfg_file = cfg_file
         self.classes = classes
         self.train_loader = train_loader
@@ -48,6 +47,7 @@ class FeatureExtractor():
         self.class_agnostic = class_agnostic
         self.cuda = cuda
         self.load_name = checkpoint_path
+        self.save_dir = save_dir
         self.max_per_image = 100
         self.pthresh = 0
 
@@ -70,7 +70,7 @@ class FeatureExtractor():
             cfg.POOLING_MODE = checkpoint['pooling_mode']
 
 
-    def run(self):
+    def run(self, mode):
         cfg_from_file(self.cfg_file)
         cfg.USE_GPU_NMS = self.cuda
         # print('Using config:')
@@ -78,11 +78,11 @@ class FeatureExtractor():
         np.random.seed(cfg.RNG_SEED)
         self.build_model()
         self.load_checkpoint()
-        self.detect()
+        self.detect(mode)
 
 
 
-    def detect(self):
+    def detect(self, mode):
         im_data = torch.FloatTensor(1)
         im_info = torch.FloatTensor(1)
         num_boxes = torch.LongTensor(1)
@@ -105,24 +105,24 @@ class FeatureExtractor():
             num_boxes = Variable(num_boxes)
             gt_boxes = Variable(gt_boxes)
 
+        if not osp.exists(self.save_dir):
+            os.makedirs(self.save_dir)
         self.fasterRCNN.eval()
-
-        save_dir = '../ground_data/frame_feature/'
-
-        for iv, inputs in enumerate(self.val_loader):
-            #if iv <= 200000: continue
+        sample_loader = self.val_loader if mode == 'val' else self.train_loader
+        total_n = len(sample_loader)
+        print('Total number: {}'.format(total_n))
+        for iv, inputs in enumerate(sample_loader):
+            # if iv <= 200000: continue
             # if iv > 200000: break
 
             spatial_data, frame_name = inputs
             frame_name = frame_name[0]
 
-            save_name = osp.join(save_dir, frame_name + '.pkl')
+            save_name = osp.join(self.save_dir, frame_name + '.pkl')
             if osp.exists(save_name): continue
 
             fdet = self.get_snippet_dets(spatial_data, im_data, im_info, gt_boxes, num_boxes)
 
-
-            save_name = save_dir + frame_name + '.pkl'
             dirname = osp.dirname(save_name)
             if not osp.exists(dirname):
                 os.makedirs(dirname)
@@ -130,7 +130,7 @@ class FeatureExtractor():
             with open(save_name, 'wb') as fp:
                 pkl.dump(fdet, fp)
             if iv % 500 == 0:
-                print(iv, save_name)
+                print('{}/{} {}'.format(iv, total_n, save_name))
 
 
 

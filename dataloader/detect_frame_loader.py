@@ -113,10 +113,13 @@ class DetectFrameLoader():
         self.val_frames = test_list
 
 
-    def run(self):
-
-        train_loader = '' # self.train()
-        val_loader = self.validate()
+    def run(self, mode):
+        if mode == 'val':
+            train_loader = '' # self.train()
+            val_loader = self.validate()
+        elif mode == 'train':
+            train_loader = self.train()
+            val_loader = '' #self.validate()
         return train_loader, val_loader
 
 

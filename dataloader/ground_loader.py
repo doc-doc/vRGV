@@ -28,25 +28,6 @@ class RelationDataset(Dataset):
     def __len__(self):
         return len(self.sample_list)
 
-    def select_bbox(self, roi_bbox, roi_classme, width, height):
-        """
-        select the bboxes with maximun confidence
-        :param roi_bbox:
-        :param roi_classme:
-        :return:
-        """
-        bbox, classme = roi_bbox.squeeze(), roi_classme.squeeze()
-        classme = classme[:, 1:]  # skip background
-        index = np.argmax(classme, 1)
-        bbox = np.asarray([bbox[i][4 * (index[i] + 1):4 * (index[i] + 1) + 4] for i in range(len(bbox))])
-        relative_bbox = bbox / np.asarray([width, height, width, height])
-        area = (bbox[:,2]-bbox[:,0]+1)*(bbox[:,3]-bbox[:,1]+1)
-        relative_area = area/(width*height)
-        relative_area = relative_area.reshape(-1, 1)
-        relative_bbox = np.hstack((relative_bbox, relative_area))
-
-        return relative_bbox
-
 
     def get_video_feature(self, video_name, frame_count, width, height):
         """
@@ -56,28 +37,12 @@ class RelationDataset(Dataset):
         :param height:
         :return:
         """
-        video_feature_folder = osp.join(self.video_feature_path, video_name)
-        cache_file = osp.join(self.video_feature_cache, '{}.pkl'.format(video_name))
+        
+        cache_file = osp.join(self.video_feature_cache, '{}.npy'.format(video_name))
         if osp.exists(cache_file) and osp.getsize(cache_file) > 0:
-            video_feature = pkload(cache_file)
+            video_feature = np.load(cache_file)
+            video_feature = torch.from_numpy(video_feature).type(torch.float32)
             return video_feature
-        sample_frames = np.round(np.linspace(0, frame_count - 1, self.frame_steps))
-        video_feature = torch.zeros(len(sample_frames), self.nbbox, self.feat_dim)
-        for i, fid in enumerate(sample_frames):
-            frame_name = osp.join(video_feature_folder, str(int(fid)).zfill(6)+'.pkl')
-            with open(frame_name, 'rb') as fp:
-                feat = pkl.load(fp)
-            roi_feat = feat['roi_feat'] #40x2048
-            roi_bbox = feat['bbox']
-            roi_classme = feat['cls_prob'] #40 x 81
-            bbox = self.select_bbox(roi_bbox, roi_classme, width, height) # 40 x 5
-            cb_feat = np.hstack((roi_feat, bbox))
-
-            video_feature[i] = torch.Tensor(cb_feat)
-
-        pkdump(video_feature, cache_file)
-
-        return video_feature
 
 
     def get_word_idx(self, relation):

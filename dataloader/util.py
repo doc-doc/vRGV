@@ -47,8 +47,7 @@ def get_video_frames(video_relation_file):
     sample_num = 120
 
     for video, nframe in vframes.items():
-        # if video == '1052/5441845281':
-        #     print(video, nframe)
+        
         samples = np.round(np.linspace(
             0, nframe-1, sample_num))
 
@@ -62,3 +61,54 @@ def get_video_frames(video_relation_file):
 
     return all_frames
 
+def select_bbox(roi_bbox, roi_classme, width, height):
+        """
+        select the bboxes with maximun confidence
+        :param roi_bbox:
+        :param roi_classme:
+        :return:
+        """
+        bbox, classme = roi_bbox.squeeze(), roi_classme.squeeze()
+        classme = classme[:, 1:]  # skip background
+        index = np.argmax(classme, 1)
+        bbox = np.asarray([bbox[i][4 * (index[i] + 1):4 * (index[i] + 1) + 4] for i in range(len(bbox))])
+        relative_bbox = bbox / np.asarray([width, height, width, height])
+        area = (bbox[:,2]-bbox[:,0]+1)*(bbox[:,3]-bbox[:,1]+1)
+        relative_area = area/(width*height)
+        relative_area = relative_area.reshape(-1, 1)
+        relative_bbox = np.hstack((relative_bbox, relative_area))
+
+        return relative_bbox
+
+
+def get_video_feature(video_feature_path, cache_file, frame_count, 
+                    width, height, nbbox, frame_steps, feat_dim):
+        """
+        :param video_name:
+        :param frame_count:
+        :param width:
+        :param height:
+        :return:
+        """
+        # video_feature_folder = osp.join(video_feature_path, video_name)
+        # cache_file = osp.join(video_feature_cache, '{}.npy'.format(video_name))
+        # if osp.exists(cache_file) and osp.getsize(cache_file) > 0:
+        #     video_feature = pkload(cache_file)
+        #     return video_feature
+        sample_frames = np.round(np.linspace(0, frame_count - 1, frame_steps))
+        video_feature = np.zeros((len(sample_frames), nbbox, feat_dim), dtype=np.float32)
+        for i, fid in enumerate(sample_frames):
+            frame_name = osp.join(video_feature_path, str(int(fid)).zfill(6)+'.pkl')
+            with open(frame_name, 'rb') as fp:
+                feat = pkl.load(fp)
+            roi_feat = feat['roi_feat'] #40x2048
+            roi_bbox = feat['bbox']
+            roi_classme = feat['cls_prob'] #40 x 81
+            bbox = select_bbox(roi_bbox, roi_classme, width, height) # 40 x 5
+            cb_feat = np.hstack((roi_feat, bbox))
+
+            video_feature[i] = cb_feat
+
+        np.savez(cache_file, x=video_feature)
+
+        return video_feature

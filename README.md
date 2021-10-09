@@ -15,30 +15,39 @@ Please create an env for this project using anaconda3 (should install [anaconda]
 >conda create -n envname python=3.6.5 # Create
 >conda activate envname # Enter
 >pip install -r requirements.txt # Install the provided libs
->sh vRGV/lib/make.sh # Set the environment for detection
+>sh vRGV/lib/make.sh # Set the environment for detection, make sure you have nvcc
 ```
 ## Data Preparation
-Please download the data [here](https://drive.google.com/file/d/1qNJ3jBPPoi0BPkvLqooS66czvCxsib1M/view?usp=sharing). The folder [ground_data] should be at the same directory as vRGV [this project]. Please merge the downloaded vRGV folder with this repo. 
+Please download the data [here](https://drive.google.com/file/d/1qNJ3jBPPoi0BPkvLqooS66czvCxsib1M/view?usp=sharing). The folder ```ground_data``` should be at the same directory as ```vRGV```. Please merge the downloaded vRGV folder with this repo. 
 
 Please download the extracted videos [here](https://drive.google.com/file/d/1HpgJ38GjW0mXXBjsEMReLvXhfYaehKqR/view?usp=sharing), and put them into ground_data. 
 The directory should be like: ground_data/vidvrd/JPEGImages/ILSVRC2015_train_xxx/000000.JPEG.
 
 ## Usage
-Feature Extraction (need about 100G storage! Because I dumped all the detected bboxes along with their features. It can be greatly reduced by changing detect_frame.py to return the top-40 bboxes and save them with h5py file.)
+Feature Extraction. (need about 100G storage! Because I dumped all the detected bboxes along with their features. It can be greatly reduced by changing detect_frame.py to return the top-40 bboxes and save them with .npz file.)
 ```
->./detection.sh
+./detection.sh 0 val #(or train)
 ```
-Training
+Sample video features:
 ```
->./ground.sh 0 train # Train the model with GPU id 0
+cd tools
+python sample_video_feature.py
 ```
-Inference
+Test. You can use our provided model to verify the feature and environment:
 ```
->./ground.sh 0 val # Output the relation-aware spatio-temporal attention
->python generate_track_link.py # Generate relation-aware trajectories with Viterbi algorithm
->python eval_ground.py # Evaluate the performance
+./ground.sh 0 val # Output the relation-aware spatio-temporal attention
+python generate_track_link.py # Generate relation-aware trajectories with Viterbi algorithm.
+python eval_ground.py # Evaluate the performance
 ```
-## Visualization
+You will get accuracy:
+|Acc_s| Acc_o | Acc_R|
+|36.77| 36.30 | 24.58 |
+Train. If you want to train the model from stratch. Please apply a two-stage training scheme: 1) train a basic model without relation attendance, and 2) load the recostruction part of the pre-trained model to learn the whole model (with the same lr_rate). For implementation, please turn off/on [pretrain] in line 53 of ```ground.py```, and switch between line 6 & 7 in ```ground_relation.py```  for 1st & 2nd stage training respectively. Also, you need to change the model files in line 69 & 70 to the best model obtained at the first stage for 2nd-stage training. 
+```
+./ground.sh 0 train # Train the model with GPU id 0
+```
+You will get the results with Acc_R around 24.58. For comparison, please follow the results reported in our paper.
+## Result Visualization
 |Query| bicycle-jump_beneath-person       | person-feed-elephant          | person-stand_above-bicycle       | dog-watch-turtle|
 |:---| --------------------------------- | ----------------------------- | ---------------------------------------- | ---------------------------------------- | 
 |Result| ![](https://media.giphy.com/media/htciIcJZ2q7pb06zoI/giphy.gif) | ![](https://media.giphy.com/media/dX34r2BJNjVCNCuFNy/giphy.gif)   | ![](https://media.giphy.com/media/ln7xmvrkjcX47W9Kax/giphy.gif)|![](https://media.giphy.com/media/h5uiVR9ukJLVRgT9yC/giphy.gif)|

@@ -3,6 +3,7 @@
 # @Email   : junbin@comp.nus.edu.sg
 # @File    : ground_relation.py
 # ====================================================
+# from networks.basic import *
 from networks.relation2relation import *
 from utils import *
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -46,12 +47,11 @@ class GroundRelation():
                                              lr=self.lr)
 
 
-        self.scheduler = ReduceLROnPlateau(self.optimizer, 'min', patience=2, verbose=True)
+        self.scheduler = ReduceLROnPlateau(self.optimizer, 'min', factor=0.1, patience=2, verbose=True)
 
         self.relation_ground.to(self.device)
         self.relation_reconstruction.to(self.device)
         self.criterion = nn.CrossEntropyLoss().to(self.device)
-
 
     def save_model(self, epoch):
 
@@ -62,20 +62,21 @@ class GroundRelation():
 
     def resume(self):
         """
-        initialize with pre-trained model
+        Initialize with the basic model obtained at the 1st stage.
         :param epoch:
         :return:
         """
-        ground_model_file = osp.join(self.model_dir,'../visual-ground-7.ckpt')
-        reconstruct_model_file = osp.join(self.model_dir,'../visual-reconstruct-7.ckpt')
+        ground_model_file = osp.join(self.model_dir,'vRGV-basic-ground-3.ckpt')
+        reconstruct_model_file = osp.join(self.model_dir,'vRGV-basic-reconstruct-3.ckpt')
         ground_dict = torch.load(ground_model_file)
         reconstruct_dict = torch.load(reconstruct_model_file)
 
-        new_ground_dict = {}
-        for k, v in self.relation_ground.state_dict().items():
-            if k in ground_dict:
-                v = ground_dict[k]
-            new_ground_dict[k] = v
+        # new_ground_dict = {}
+        # for k, v in self.relation_ground.state_dict().items():
+        #     if k in ground_dict:
+        #         v = ground_dict[k]
+        #     new_ground_dict[k] = v
+        # self.relation_ground.load_state_dict(new_ground_dict) #only reconstruction part is better
 
         new_reconstruct_dict = {}
         for k, v in self.relation_reconstruction.state_dict().items():
@@ -111,8 +112,7 @@ class GroundRelation():
     def train(self, epoch):
         print('==> Epoch:[{}/{}] [training stage Encode_lr: {} Decode_lr: {}]'.
               format(epoch, self.epoch_num, self.optimizer.param_groups[1]['lr'], self.optimizer.param_groups[0]['lr']))
-        # print('Time \t Iter \t Loss \t Perplexity')
-
+       
         self.relation_ground.train()
         self.relation_reconstruction.train()
 
