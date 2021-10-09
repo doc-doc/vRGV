@@ -34,7 +34,6 @@ vocab_file = osp.join(sample_list_path, 'vocab.pkl')
 checkpoint_path = osp.join('models', dataset)
 model_prefix = 'visual_bbox_trans_temp2'
 
-
 def main(args):
 
     with open(vocab_file, 'rb') as fp:
