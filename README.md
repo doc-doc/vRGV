@@ -39,14 +39,13 @@ Test. You can use our provided model to verify the feature and environment:
 python generate_track_link.py # Generate relation-aware trajectories with Viterbi algorithm.
 python eval_ground.py # Evaluate the performance
 ```
-You will get accuracy:
-|Acc_s| Acc_o | Acc_R|
-|36.77| 36.30 | 24.58 |
+You will get accuracy Acc_R: 24.58 .
+
 Train. If you want to train the model from stratch. Please apply a two-stage training scheme: 1) train a basic model without relation attendance, and 2) load the recostruction part of the pre-trained model to learn the whole model (with the same lr_rate). For implementation, please turn off/on [pretrain] in line 52 of ```ground.py```, and switch between line 6 & 7 in ```ground_relation.py```  for 1st & 2nd stage training respectively. Also, you need to change the model files in line 69 & 70 to the best model obtained at the first stage for 2nd-stage training. 
 ```
 ./ground.sh 0 train # Train the model with GPU id 0
 ```
-You will get the results with Acc_R around 24.58. For comparison, please follow the results reported in our paper.
+For comparison, please follow the results reported in our paper.
 ## Result Visualization
 |Query| bicycle-jump_beneath-person       | person-feed-elephant          | person-stand_above-bicycle       | dog-watch-turtle|
 |:---| --------------------------------- | ----------------------------- | ---------------------------------------- | ---------------------------------------- | 
