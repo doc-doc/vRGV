@@ -45,7 +45,7 @@ Train. If you want to train the model from scratch. Please apply a two-stage tra
 ```
 ./ground.sh 0 train # Train the model with GPU id 0
 ```
-For comparison, please follow the results reported in our paper.
+The results maybe slightly different (+/-0.5%), For comparison, please follow the results reported in our paper.
 ## Result Visualization
 |Query| bicycle-jump_beneath-person       | person-feed-elephant          | person-stand_above-bicycle       | dog-watch-turtle|
 |:---| --------------------------------- | ----------------------------- | ---------------------------------------- | ---------------------------------------- | 
