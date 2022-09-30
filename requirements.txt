@@ -3,7 +3,7 @@ cffi
 certifi==2020.11.8
 click==7.1.2
 easydict==1.9
-joblib==0.17.0
+joblib==1.2.0
 nltk==3.5
 numpy==1.19.4
 opencv-python==4.4.0.46
