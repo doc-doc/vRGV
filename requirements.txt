@@ -1,6 +1,6 @@
 cython
 cffi
-certifi==2020.11.8
+certifi==2022.12.7
 click==7.1.2
 easydict==1.9
 joblib==0.17.0
